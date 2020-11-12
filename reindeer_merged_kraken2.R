@@ -24,9 +24,9 @@ rt.euk<-euk %>%
   rownames_to_column("samples") %>% 
   # filter(grepl("^Rt",x = samples)) %>% # select only reindeer
   mutate(samples=gsub("\\_.*","",samples)) %>%  # clean up column names
-  select(samples,which(!is.na(colnames(.) %in% taxa_names$tax_id))) %>% 
+  select(samples,which(colnames(.) %in% taxa_names$tax_id)) %>% 
   column_to_rownames("samples")
 
-colnames(rt.euk) <- ifelse(taxa_names$tax_id %in% colnames(rt.euk),taxa_names$species,taxa_names$tax_id)
+# colnames(rt.euk) <- ifelse(taxa_names$tax_id %in% colnames(rt.euk),taxa_names$species,taxa_names$tax_id)
 
-write.table(rt.euk,file = "Metagenomics/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt",quote = F,row.names = F,col.names = T,sep="\t")
+write.table(rt.euk,file = "Metagenomics/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt",quote = F,row.names = T,col.names = T,sep="\t")
