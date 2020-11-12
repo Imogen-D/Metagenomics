@@ -1,5 +1,6 @@
 #Analysing OTU and metagenomic data for all reindeer samples; extracting fungal taxa
 #phyloseq
+#12112020 OTU without fungi so new OTU table
 
 
 library(usethis)
@@ -8,21 +9,40 @@ use_git_config(user.name = "Imogen-D", user.email = "imogen.dumville@gmail.com")
 library(phyloseq)
 library(rentrez)
 library(taxize)
+library(stringr)
 
 set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
-DC1.fungal.otu <- read.delim("~/MEME/Uppsala_Katja_Project/Metagenomics/DC1-fungal-otu.txt")
-Sample_processing_masterlist <- read.csv("~/MEME/Uppsala_Katja_Project/Metagenomics/Sample_processing_masterlist.csv", stringsAsFactors=FALSE)
-sample <- c("Rt11", "Rt13", "Rt1", "Rt5", "Rt7") #manually from table
-rownames(DC1.fungal.otu) <- sample
-row.names(samplereindeer) <- samplereindeer$Seq.label
-which(Sample_processing_masterlist$Seq.label == c("Rt11", "Rt13", "Rt1", "Rt5", "Rt7")) #41, 38, 24, 2, 15
-samplereindeer <- Sample_processing_masterlist[c(41, 38, 24, 2, 15),]
-samplereindeer <- samplereindeer[ , colSums(is.na(samplereindeer)) == 0]
-taxa <- colnames(DC1.fungal.otu)
+full_otu <- read.delim("~/MEME/Uppsala_Katja_Project/Metagenomics/reindeer_kraken2_otu_table_merged_201106.txt", row.names=1, stringsAsFactors=FALSE)
+metadata <- read.csv("~/MEME/Uppsala_Katja_Project/Metagenomics/Sample_processing_masterlist.csv", stringsAsFactors=FALSE)
+colnames(full_otu) <- str_remove(colnames(full_otu), "_kraken2_report")
+
+reindeermeta <- metadata[which(str_detect(metadata$Seq.label, "Rt")),]
+
+reindeermeta[38,5] <- "Rt052" #previously Vl001/Rt052
+
+#maybe tidy up metadata?? 
+
+classes <- data.frame()
+
+classes <- classification(rownames(full_otu), db="ncbi")
+
+Fungi <- which(str_detect(classes, pattern = "Fungi"))
+
+
+
+for (x in rownames(full_otu)) {
+  class <- classification(x, db = "ncbi")
+  classes <- rbind.data.frame(classes, class)
+}
+
+###old code from other script
+
+OTUtaxa <- rownames(full_otu)
 
 all_kingdoms <- data.frame()
 
-for (x in taxa) {
+
+for (x in OTUtaxa) {
   y <- tax_name(x, "kingdom", db = "ncbi")
   Sys.sleep(0.1)  #ugly and slow, could be shorter but required as API only allows certain no of search per seconds
   all_kingdoms <- rbind.data.frame(all_kingdoms, y)
@@ -43,4 +63,3 @@ plot_bar(phydata, fill="Sample.weight.g")
 
 #next = make OTU on x axis & colour by sample/metadata. Go through metadata for interests
 
-         
