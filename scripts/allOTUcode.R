@@ -10,7 +10,9 @@ library(phyloseq)
 library(rentrez)
 library(taxize)
 library(stringr)
+library(tidyr)
 library(data.table)
+
 
 set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
 full_otu <- read.delim("~/MEME/Uppsala_Katja_Project/Metagenomics/data/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt", row.names=1, stringsAsFactors=FALSE)
@@ -29,31 +31,18 @@ OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
 #attempting to make TaxonomyTable
 OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
 bound1 <- bind_rows(OTUtaxa, .id = "column_label")
-transposed <- transpose(bound)
-bound <- bind_rows(OTUtaxa, .id = "rank")
 
-#bind list of dataframes with different lengths
-#unique rank names as colnames
+bound1 <- bound1[,-"id"]
+
+wide <- pivot_wider(bound1, names_from = rank, values_from = name, id_cols = column_label)
+wide <- wide[,-c(2,4)]
+wide <- as.data.frame(wide, row.names = column_label) #so I do this to change from tibble to df
+wide <- as.matrix(wide) #matrix required for tax table
+rownames(wide) <- wide$column_labels #this isn't working which then stops the tax_table function from actually doing its job
 
 
-#lst <- list(a = 1:3, b = 1:4, name = c("A", "X"))  #a list for the example
-
-#n <- max(unlist(lapply(lst, length)))              #check maximum length
-
-#lstnew <- lapply(OTUtaxa, function(x) {ans <- rep(NA, length=16); 
-#ans[1:length(x)]<- x; 
-#return(ans)})
-
-#tax_table(OTUmatrix)
-
-dt <- setDT(bound1)
-dc2 <- dcast.data.table(dt, column_label~rank, value.var = 'name')
-dc <-dcast(dt, column_label~rank, value.var='name') #aggregate('name')
-melt <- "melt"(bound1, "column_label", "name")
-
-reshape(dt, direction = "wide", idvar=c("name", "column_label"), timevar="rank")
-
-View(dt)
+taxotable <- tax_table(wide)
+View(taxotable)
 
 sampledata <- sample_data(nodupmeta)
 phylo
