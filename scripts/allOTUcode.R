@@ -37,11 +37,26 @@ bound1 <- bound1[,-"id"]
 wide <- pivot_wider(bound1, names_from = rank, values_from = name, id_cols = column_label)
 wide <- wide[,-c(2,4)]
 wide <- as.data.frame(wide, row.names = column_label) #so I do this to change from tibble to df
-wide <- as.matrix(wide) #matrix required for tax table
-rownames(wide) <- wide$column_labels #this isn't working which then stops the tax_table function from actually doing its job
+rownames(wide) <- wide$column_label
+#rownames(wide) <- as.character(wide$column_label)
+colnames(wide)
+wide <- wide[,-1]
+charwide[] <- lapply(wide, as.character)
+#charwide <- data.frame(lapply(wide, as.character), stringsAsFactors=FALSE)
+
+charwide <- as.matrix(charwide) #matrix required for tax table
 
 
-taxotable <- tax_table(wide)
+
+#is.character(wide[1,1])
+#type.convert(wide)
+
+#rownames(wide)
+#class(wide)
+
+#colnames(wide)
+taxotable <- tax_table(charwide)
+
 View(taxotable)
 
 sampledata <- sample_data(nodupmeta)
@@ -52,5 +67,4 @@ plot_bar(phydata, fill="Genus")
 #next = make OTU on x axis & colour by sample/metadata. Go through metadata for interests
 colnames(nodupmeta)
 
-#classification("71600", db = "ncbi")
-#test <- ncbi_get_taxon_summary("71600")
+
