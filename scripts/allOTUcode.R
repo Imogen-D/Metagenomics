@@ -52,9 +52,10 @@ taxotable <- tax_table(charwide)
 sampledata <- sample_data(nodupmeta)
 
 phydata <- phyloseq(OTU, sampledata, taxotable)
-plot_bar(phydata, fill="Genus")
+plot_bar(phydata, fill="genus")
 
 #next = make OTU on x axis & colour by sample/metadata. Go through metadata for interests
 colnames(nodupmeta)
+
 
 
