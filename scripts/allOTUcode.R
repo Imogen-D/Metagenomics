@@ -53,6 +53,12 @@ sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples 
 
 phydata <- phyloseq(OTU, sampledata,taxotable)
 
+pdf(file = "all_bars_ecotype.pdf", height = 50, width = 50)
+plot_bar(phydata, x = "Seq.label", fill = "species", facet_grid = ~Reindeer.ecotype) + theme(legend.position = "none")
+dev.off()
+
+
+
 #subsetting for quicker analysis
 noeco <- (which(is.na(metadata$Reindeer.ecotype)))
 ecotypemeta <- sample_data(metadata[-c(noeco),]) #only those with ecotype data
@@ -62,9 +68,15 @@ topN <- 100
 most_abundant_taxa <- sort(taxa_sums(ecophy), TRUE)[1:topN]
 GP100 <- prune_taxa(names(most_abundant_taxa), ecophy)
 
-plot_bar(GP100,x = "Seq.label", fill="species")+theme(legend.position="none") #+facet_grid=~Reindeer.ecotype
+
+plot_bar(GP100, x = "Seq.label", fill="species", facet_grid=~Reindeer.ecotype)+theme(legend.position="none") 
+#not working at any other taxa level
 
 #heatmap function not working yet
-plot_heatmap(GP100, sample.label = "Seq.label", taxa.label = "species") #SampleType could be metadata - bind 1 + 2 and other data
+plot_heatmap(GP100, sample.label = "Seq.label", taxa.label = "family") 
+#not working with any other taxa level and also not merging ecotypes
 
+#pdf(file = "./images/100eco.pdf", height = 50, width = 50)
+#plot_heatmap(GP100, sample.label = "Reindeer.ecotype", taxa.label = "species") #SampleType could be metadata - bind 1 + 2 and other data
+#dev.off()
 
