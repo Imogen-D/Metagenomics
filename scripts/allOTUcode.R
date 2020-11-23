@@ -35,19 +35,14 @@ OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
 
 #making TaxonomyTable
 OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
-bound1<-do.call(dplyr::bind_rows,OTUtaxa)
-write.csv(bound1, "./data/OTUtaxonomy.csv")
 
-wide <- bound1 %>% distinct(name,rank,id,.keep_all = T) %>% 
-  pivot_wider(id_cols = id, names_from = rank, values_from = name) %>% 
-  mutate_all(as.character) %>% 
-  # mutate(genus.species=paste0(genus," ",species))
-rownames(wide)<-wide$id # add rownames
-  
-write.csv(wide, "./data/OTUtaxonomyformatted.csv")
+bound1<-bind_rows(as_tibble(cbind(OTUtaxa))) %>% 
+  select(kingdom,phylum,class,order,family,genus,species)
+rownames(bound1)<-names(OTUtaxa)
+
+write.csv(bound1, "./data/OTUtaxonomyformatted.csv")
 
 OTUtaxonomyformatted <- read.csv("./data/OTUtaxonomyformatted.csv", row.names=1, stringsAsFactors=FALSE) %>% # read in taxa table saved from taxize 
-  select(superkingdom,phylum,class,order,family,genus,species) %>% # we really only need these classifications
   rename_all(str_to_title)  # make the column names into title case
 
 taxotable <- tax_table(as.matrix(OTUtaxonomyformatted)) # matrix required for tax table
@@ -72,7 +67,7 @@ plot_bar(GP100, x = "Seq.label", fill="species", facet_grid=~Reindeer.ecotype)+t
 #not working at any other taxa level
 
 #heatmap function not working yet
-plot_heatmap(GP100,sample.label = "Seq.label",taxa.label = "Species",max.label = 150)
+plot_heatmap(GP100,sample.label = "Seq.label",taxa.label = "Family",max.label = ntaxa(GP100))
 #not working with any other taxa level and also not merging ecotypes
 
 #pdf(file = "./images/100eco.pdf", height = 50, width = 50)
