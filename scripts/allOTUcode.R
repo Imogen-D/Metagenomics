@@ -13,12 +13,13 @@ library(stringr)
 library(tidyr)
 library(data.table)
 library(ggplot2)
+library(stringr)
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
 set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
 
-full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt", row.names=1, stringsAsFactors=FALSE) %>% 
+full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt",na.strings = c("","NA"), row.names=1, stringsAsFactors=FALSE) %>% 
   replace(., is.na(.), 0) %>% 
   select(which(colSums(.) > 0)) # remove taxa summing to zero
 
@@ -40,15 +41,16 @@ write.csv(bound1, "./data/OTUtaxonomy.csv")
 wide <- bound1 %>% distinct(name,rank,id,.keep_all = T) %>% 
   pivot_wider(id_cols = id, names_from = rank, values_from = name) %>% 
   mutate_all(as.character) %>% 
-  mutate(genus.species=paste0(genus," ",species))
+  # mutate(genus.species=paste0(genus," ",species))
 rownames(wide)<-wide$id # add rownames
   
 write.csv(wide, "./data/OTUtaxonomyformatted.csv")
 
-OTUtaxonomyformatted <- read.csv("./data/OTUtaxonomyformatted.csv", row.names=1, stringsAsFactors=FALSE)
-OTUtaxonomyformatted <- as.matrix(OTUtaxonomyformatted) #matrix required for tax table
+OTUtaxonomyformatted <- read.csv("./data/OTUtaxonomyformatted.csv", row.names=1, stringsAsFactors=FALSE) %>% # read in taxa table saved from taxize 
+  select(superkingdom,phylum,class,order,family,genus,species) %>% # we really only need these classifications
+  rename_all(str_to_title)  # make the column names into title case
 
-taxotable <- tax_table(OTUtaxonomyformatted)
+taxotable <- tax_table(as.matrix(OTUtaxonomyformatted)) # matrix required for tax table
 sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
 
 phydata <- phyloseq(OTU, sampledata,taxotable)
@@ -56,8 +58,6 @@ phydata <- phyloseq(OTU, sampledata,taxotable)
 pdf(file = "all_bars_ecotype.pdf", height = 50, width = 50)
 plot_bar(phydata, x = "Seq.label", fill = "species", facet_grid = ~Reindeer.ecotype) + theme(legend.position = "none")
 dev.off()
-
-
 
 #subsetting for quicker analysis
 noeco <- (which(is.na(metadata$Reindeer.ecotype)))
@@ -68,12 +68,11 @@ topN <- 100
 most_abundant_taxa <- sort(taxa_sums(ecophy), TRUE)[1:topN]
 GP100 <- prune_taxa(names(most_abundant_taxa), ecophy)
 
-
 plot_bar(GP100, x = "Seq.label", fill="species", facet_grid=~Reindeer.ecotype)+theme(legend.position="none") 
 #not working at any other taxa level
 
 #heatmap function not working yet
-plot_heatmap(GP100, sample.label = "Seq.label", taxa.label = "family") 
+plot_heatmap(GP100,sample.label = "Seq.label",taxa.label = "Species",max.label = 150)
 #not working with any other taxa level and also not merging ecotypes
 
 #pdf(file = "./images/100eco.pdf", height = 50, width = 50)
