@@ -18,7 +18,7 @@ library(microbiomeutilities)
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
-set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
+#set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
 full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt",na.strings = c("","NA"), row.names=1, stringsAsFactors=FALSE) %>% 
   replace(., is.na(.), 0) %>% 
   select(which(colSums(.) > 0)) # remove taxa summing to zero
@@ -30,15 +30,15 @@ metadata <- read.delim("./data/reindeer_sample_metadate_merged.txt", stringsAsFa
   filter(!is.na(Seq.label))
 rownames(metadata)<-metadata$Seq.label # add rownames
 
-#maybe tidy up metadata?? 
+ 
 OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
 
 #making TaxonomyTable
-OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
+#OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
 
-bound1<-bind_rows(as_tibble(cbind(OTUtaxa))) %>% 
-  select(kingdom,phylum,class,order,family,genus,species)
-rownames(bound1)<-names(OTUtaxa)
+#bound1<-bind_rows(as_tibble(cbind(OTUtaxa))) %>% 
+ # select(kingdom,phylum,class,order,family,genus,species)
+#rownames(bound1)<-names(OTUtaxa)
 
 write.csv(bound1, "./data/OTUtaxonomyformatted.csv")
 
@@ -79,3 +79,18 @@ plot_taxa_heatmap(ecophy,
                   subset.top = 100, taxonomic.level = "Family", 
                   transformation = "log10", VariableA = "Reindeer.ecotype")
 dev.off()
+
+OTUfam <- microbiome::aggregate_taxa(ecophy, "Family")
+
+pdf(file = "./images/heatmap1000family.pdf", height = 25, width = 50)
+plot_taxa_heatmap(OTUfam, subset.top = 1000, transformation = "log10",
+                  taxonomic.level = "Family",
+                  VariableA = "Reindeer.ecotype")
+dev.off()
+
+pdf(file = "./images/heatmap20familyclr.pdf", height = 5, width = 10)
+plot_taxa_heatmap(OTUfam, subset.top = 20, transformation = "clr",
+                  taxonomic.level = "Family", border_color = "grey60",
+                  VariableA = "Reindeer.ecotype")
+dev.off()
+
