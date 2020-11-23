@@ -2,7 +2,6 @@
 #phyloseq
 #12112020 OTU without fungi so new OTU table
 
-
 library(usethis)
 use_git_config(user.name = "Imogen-D", user.email = "imogen.dumville@gmail.com")
 library(dplyr)
@@ -14,7 +13,6 @@ library(tidyr)
 library(data.table)
 library(ggplot2)
 library(microbiomeutilities)
-
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
@@ -30,15 +28,14 @@ metadata <- read.delim("./data/reindeer_sample_metadate_merged.txt", stringsAsFa
   filter(!is.na(Seq.label))
 rownames(metadata)<-metadata$Seq.label # add rownames
 
- 
 OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
 
 #making TaxonomyTable
-#OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
+OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
 
-#bound1<-bind_rows(as_tibble(cbind(OTUtaxa))) %>% 
- # select(kingdom,phylum,class,order,family,genus,species)
-#rownames(bound1)<-names(OTUtaxa)
+bound1<-bind_rows(as_tibble(cbind(OTUtaxa))) %>%
+  select(kingdom,phylum,class,order,family,genus,species)
+rownames(bound1)<-names(OTUtaxa)
 
 write.csv(bound1, "./data/OTUtaxonomyformatted.csv")
 
@@ -49,7 +46,6 @@ taxotable <- tax_table(as.matrix(OTUtaxonomyformatted)) # matrix required for ta
 sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
 
 phydata <- phyloseq(OTU, sampledata,taxotable)
-
 
 #subsetting for quicker analysis
 noeco <- (which(is.na(metadata$Reindeer.ecotype)))
@@ -93,4 +89,3 @@ plot_taxa_heatmap(OTUfam, subset.top = 20, transformation = "clr",
                   taxonomic.level = "Family", border_color = "grey60",
                   VariableA = "Reindeer.ecotype")
 dev.off()
-

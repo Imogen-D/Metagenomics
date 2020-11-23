@@ -1,7 +1,10 @@
 library(tidyverse)
-meta <- read.csv("Metagenomics/data/reindeer_sample_metadate_merged.txt",sep="\t",header=T)
+library(rentrez)
+library(taxize)
 
-euk<-read.table("DC-Fungi/kraken2_otu_table_merged_bracken_201113.txt",sep="\t",header=T,skip = 1,comment.char = "") %>% 
+meta <- read.csv("data/reindeer_sample_metadate_merged.txt",sep="\t",header=T)
+
+euk<-read.table("data/kraken2_otu_table_merged_201112.txt",sep="\t",header=T,skip = 1,comment.char = "") %>% 
   rename(taxa="X.OTU.ID") %>%
   mutate(taxa=paste0("X",taxa)) %>% 
   pivot_longer(cols=-taxa) %>% 
@@ -9,10 +12,16 @@ euk<-read.table("DC-Fungi/kraken2_otu_table_merged_bracken_201113.txt",sep="\t",
   mutate(name=gsub("_kraken2_report","",name)) %>% 
   column_to_rownames("name")
 
-source("DC2/scripts/grab-taxa.R")
-grab_taxa(euk,"DC-Fungi/kraken2_otu_table_merged_bracken_201113-taxa.csv")
+#making TaxonomyTable
+set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
+OTUtaxa <- classification(gsub("X","",colnames(euk)), db = "ncbi")
 
-taxa_names<-read.csv("DC-Fungi/kraken2_otu_table_merged_bracken_201113-taxa.csv",header=T,na.strings = c("NA","")) %>% filter(kingdom=="Fungi")
+bound1<-bind_rows(as_tibble(cbind(OTUtaxa)))
+rownames(bound1)<-names(OTUtaxa)
+
+write.csv(filter(bound1,kingdom=="Fungi"), "../kraken2_otu_table_merged_bracken_201113-taxa.csv")
+
+taxa_names<-read.csv("../reindeer_kraken2_otu_table_merged_201112-taxa.csv",header=T,na.strings = c("NA","")) %>% filter(kingdom=="Fungi")
 
 taxa_names$genus.species<-ifelse(is.na(taxa_names$species),
                                  ifelse(is.na(taxa_names$genus),
@@ -23,10 +32,11 @@ taxa_names$genus.species<-ifelse(is.na(taxa_names$species),
 rt.euk<-euk %>% 
   rownames_to_column("samples") %>% 
   # filter(grepl("^Rt",x = samples)) %>% # select only reindeer
-  mutate(samples=gsub("\\_.*","",samples)) %>%  # clean up column names
-  select(samples,which(colnames(.) %in% taxa_names$tax_id)) %>% 
+  mutate(samples=gsub("\\_.*","",samples),
+         samples=gsub("_bracken","",samples)) %>%  # clean up column names
+  select(samples,which(colnames(.) %in% as.character(taxa_names$tax_id))) %>% 
   column_to_rownames("samples")
 
 # colnames(rt.euk) <- ifelse(taxa_names$tax_id %in% colnames(rt.euk),taxa_names$species,taxa_names$tax_id)
 
-write.table(rt.euk,file = "Metagenomics/data/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt",quote = F,row.names = T,col.names = T,sep="\t")
+write.table(rt.euk,file = "data/reindeer_kraken2_otu_table_merged_201112-otu.fungi.txt",quote = F,row.names = T,col.names = T,sep="\t")
