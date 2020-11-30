@@ -27,6 +27,19 @@ metadata <- read.delim("./data/reindeer_sample_metadate_merged.txt", stringsAsFa
   filter(!is.na(Seq.label))
 rownames(metadata)<-metadata$Seq.label # add rownames
 
+#Script to produce taxonomy table (in combination with allOTUcode.R)
+
+set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
+
+#making TaxonomyTable
+OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
+
+bound1<-bind_rows(as_tibble(cbind(OTUtaxa))) %>%
+  select(kingdom,phylum,class,order,family,genus,species)
+rownames(bound1)<-names(OTUtaxa)
+
+write.csv(bound1, "./data/OTUtaxonomyformatted.csv")
+
 #reading and formatting taxonomy table
 OTUtaxonomyformatted <- read.csv("./data/OTUtaxonomyformatted.csv", row.names=1, stringsAsFactors=FALSE) %>% # read in taxa table saved from taxize 
   rename_all(str_to_title)  # make the column names into title case
