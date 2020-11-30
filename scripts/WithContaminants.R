@@ -16,7 +16,7 @@ library(decontam)
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
-full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), row.names=1, stringsAsFactors=FALSE)
+full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE)
 
 #making OTU table
 #couldn't do this filtering (and didn't seem to need to) as removed heaps of taxa
@@ -49,19 +49,19 @@ write.csv(bound1, "./data/OTUtaxonomyformattedwcont.csv")
 #reading and formatting taxonomy table
 OTUtaxonomyformatted <- read.csv("./data/OTUtaxonomyformattedwcont.csv", row.names=1, stringsAsFactors=FALSE) %>% # read in taxa table saved from taxize 
   rename_all(str_to_title)  # make the column names into title case
-taxotable <- tax_table(as.matrix(OTUtaxonomyformatted)) # matrix required for tax table
+taxotable <- tax_table(as.matrix(taxa_names %>% column_to_rownames("tax_id"))) # matrix required for tax table
 sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
 
-#maing full phyloseq data format
+# making full phyloseq data format
 phydata <- phyloseq(OTU, sampledata,taxotable)
-contaminants <- isContaminant(phydata, neg = TRUE)
 
-View(contaminants)
-length(contaminants)
-which(contaminants$contaminant == TRUE)
+controls<-phydata@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank","Swab")
+contaminants <- isContaminant(phydata, method="frequency",conc = "Seq.copies.in.pool")
+sum(contaminants$contaminant==TRUE)
 
-nocontan <- isNotContaminant(phydata)
-
+nocontan<-rownames(contaminants[which(contaminants$contaminant != TRUE),])
+phydata.nocontan<-phyloseq(OTU[,nocontan], sampledata,taxotable[nocontan,])
+ 
 #subsetting for quicker analysis removing those without ecotype information
 noeco <- (which(is.na(metadata$Reindeer.ecotype)))
 ecotypemeta <- sample_data(metadata[-c(noeco),])
