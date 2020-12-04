@@ -1,4 +1,4 @@
-name: metagenomics-env
+
 channels:
   - bioconda
   - conda-forge
