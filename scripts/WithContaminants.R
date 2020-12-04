@@ -54,7 +54,7 @@ sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples 
 
 #maing full phyloseq data format
 phydata <- phyloseq(OTU, sampledata,taxotable)
-contaminants <- isContaminant(phydata, neg = TRUE)
+contaminants <- isContaminant(phydata, method = "prevalence", conc = "Seq.copies.in.pool", neg = "is.neg")
 
 View(contaminants)
 length(contaminants)
