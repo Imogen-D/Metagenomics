@@ -24,7 +24,7 @@ rownames(bound1)<-names(OTUtaxa)
 
 write.csv(filter(bound1,kingdom=="Fungi"), "data/reindeer_kraken2_otu_table_merged_201129-fungi-taxa.csv")
 
-taxa_names<-read.csv("data/reindeer_kraken2_otu_table_merged_201129-fungi-taxa.csv",header=T,na.strings = c("NA",""))
+taxa_names<-read.csv("data/reindeer_kraken2_otu_table_merged_201129-fungi-taxa.csv",header=T,na.strings = c("NA","")) %>% filter(kingdom=="Fungi")
 
 taxa_names$genus.species<-ifelse(is.na(taxa_names$species),
                                  ifelse(is.na(taxa_names$genus),
@@ -33,14 +33,12 @@ taxa_names$genus.species<-ifelse(is.na(taxa_names$species),
                                  as.character(taxa_names$species))
 
 rt.euk<-euk %>% 
-  rownames_to_column("samples") %>% 
-  filter(!grepl("bracken",samples) & 
-           !grepl("_201111",samples) & 
-           !grepl("_201112",samples)) %>% 
+  rownames_to_column("samples") %>%
+  filter(grepl("_201112",samples) | grepl("_201125",samples)) %>% 
   # filter(grepl("^Rt",x = samples)) %>% # select only reindeer
   mutate(samples=gsub("\\_.*","",samples),
          samples=gsub("_bracken","",samples)) %>%  # clean up column names
-  select(samples,which(colnames(.) %in% as.character(paste0("X",taxa_names$X)))) %>% 
+  select(samples,which(colnames(.) %in% as.character(taxa_names$tax_id))) %>% 
   column_to_rownames("samples")
 
 # colnames(rt.euk) <- ifelse(taxa_names$tax_id %in% colnames(rt.euk),taxa_names$species,taxa_names$tax_id)
