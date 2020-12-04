@@ -247,4 +247,4 @@ dependencies:
   - zlib=1.2.11=h7b6447c_3
   - zstd=1.4.5=h9ceee32_0
 
-prefix: C:\Users\jinne\anaconda3\envs\microbiomes-env
+prefix: home/Users/jinne/anaconda3/envs/microbiomes-env
