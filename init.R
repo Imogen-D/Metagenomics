@@ -4,5 +4,5 @@
 # all other times after this, conda activate metagenomics-env
 
 # missing packages in yaml
-BiocManager::install(pkgs = c("phyloseq","biostrings","microbiome"))
+BiocManager::install(pkgs = c("phyloseq","Biostrings","microbiome"))
 devtools::install_github("microsud/microbiomeutilities")
