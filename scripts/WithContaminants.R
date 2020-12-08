@@ -17,6 +17,8 @@ library(tibble)
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
 full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE)
+# %>% select(which(colSums(.) > 1)) %>% 
+#   filter(rowSums(.) > 1)
 
 #making OTU table
 #couldn't do this filtering (and didn't seem to need to) as removed heaps of taxa
@@ -26,14 +28,12 @@ full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fung
 colnames(full_otu) <- str_replace(colnames(full_otu), "X", "")
 OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
 
-
 #reading metadata table
 metadata <- read.delim("./data/Sample_processing_masterlist.txt", stringsAsFactors=FALSE) %>% 
+  select(-starts_with("X")) %>% 
   distinct(Seq.label,.keep_all=T) %>%  # remove duplicates, the tidyr way
   filter(!is.na(Seq.label))
 rownames(metadata)<-metadata$Seq.label # add rownames
-
-
 
 #set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
 #making TaxonomyTable
@@ -58,10 +58,12 @@ taxotable <- tax_table(as.matrix(OTUtaxonomyformatted))
 # making full phyloseq data format
 phydata <- phyloseq(OTU, sampledata,taxotable)
 
+controls<-phydata@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank")
+phydata@sam_data$Ext.batch<-as.factor(phydata@sam_data$Ext.batch)
 
-controls<-phydata@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank","Swab")
-contaminants <- isContaminant(phydata, method="prevalence",neg=controls,batch="Ext.batch")
-#contaminants <- isContaminant(phydata, method="frequency",conc = "Seq.copies.in.pool")
+# contaminants <- isContaminant(phydata, method="prevalence",neg=controls)
+
+contaminants <- isContaminant(phydata, method="either",neg = controls,conc = "Seq.copies.in.pool")
 sum(contaminants$contaminant==TRUE)
 
 #nocontan<-rownames(contaminants[which(contaminants$contaminant != TRUE),])
