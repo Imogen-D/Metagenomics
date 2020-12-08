@@ -16,9 +16,9 @@ library(tibble)
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
-full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE)
-# %>% select(which(colSums(.) > 1)) %>% 
-#   filter(rowSums(.) > 1)
+full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
+  select(which(colSums(.) > 0)) %>% # remove empty taxa
+  filter(rowSums(.) > 0) # remove empty samples
 
 #making OTU table
 #couldn't do this filtering (and didn't seem to need to) as removed heaps of taxa
