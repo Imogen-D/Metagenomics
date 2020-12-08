@@ -6,3 +6,4 @@
 # missing packages in yaml
 BiocManager::install(pkgs = c("phyloseq","Biostrings","microbiome"))
 devtools::install_github("microsud/microbiomeutilities")
+1
