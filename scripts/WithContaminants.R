@@ -20,11 +20,6 @@ full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fung
   select(which(colSums(.) > 0)) %>% # remove empty taxa
   filter(rowSums(.) > 0) # remove empty samples
 
-#making OTU table
-#couldn't do this filtering (and didn't seem to need to) as removed heaps of taxa
-#full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), row.names=1, stringsAsFactors=FALSE) %>% 
- # replace(., is.na(.), 0) %>% 
-  #select(which(colSums(.) > 0)) # remove taxa summing to zero
 colnames(full_otu) <- str_replace(colnames(full_otu), "X", "")
 OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
 
@@ -35,25 +30,14 @@ metadata <- read.delim("./data/Sample_processing_masterlist.txt", stringsAsFacto
   filter(!is.na(Seq.label))
 rownames(metadata)<-metadata$Seq.label # add rownames
 
-#set_entrez_key("ee1b29805250345f705302e643b1bfc4e007")
-#making TaxonomyTable
-#OTUtaxa <- classification(colnames(full_otu), db = "ncbi")
-#bound1<-bind_rows(as_tibble(cbind(OTUtaxa))) %>%
-#  select(kingdom,phylum,class,order,family,genus,species)
-#rownames(bound1)<-names(OTUtaxa) 
-#write.csv(bound1, "./data/OTUtaxonomyformattedwcont.csv")
 
-#reading and formatting taxonomy table
+#reading and formatting taxonomy table, made with classification
+
 OTUtaxonomyformatted <- read.csv("./data/OTUtaxonomyformattedwcont.csv", row.names=1, stringsAsFactors=FALSE) %>% # read in taxa table saved from taxize 
   rename_all(str_to_title)  # make the column names into title case
-#taxotable <- tax_table(as.matrix(taxa_names %>% column_to_rownames("tax_id"))) # matrix required for tax table
-sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
-
 taxotable <- tax_table(as.matrix(OTUtaxonomyformatted))
 
-#rownames(taxa_names$tax_id)
-#taxa_names<-taxa_names[,-"tax_id"]
-#taxotable <- tax_table(as.matrix(taxa_names)) # matrix required for tax table
+sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
 
 # making full phyloseq data format
 phydata <- phyloseq(OTU, sampledata,taxotable)
@@ -61,10 +45,53 @@ phydata <- phyloseq(OTU, sampledata,taxotable)
 controls<-phydata@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank")
 phydata@sam_data$Ext.batch<-as.factor(phydata@sam_data$Ext.batch)
 
-# contaminants <- isContaminant(phydata, method="prevalence",neg=controls)
-
+controls<-phydata@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank","Swab")
+contaminants <- isContaminant(phydata, method="prevalence",neg=controls, threshold = 0.5)
 contaminants <- isContaminant(phydata, method="either",neg = controls,conc = "Seq.copies.in.pool")
-sum(contaminants$contaminant==TRUE)
+conts <- c(which(contaminants$contaminant==TRUE))
 
-#nocontan<-rownames(contaminants[which(contaminants$contaminant != TRUE),])
-#phydata.nocontan<-phyloseq(OTU[,nocontan], sampledata,taxotable[nocontan,])
+
+otuswocont <- full_otu[,-c(conts)]
+OTUwocont <- otu_table(otuswocont, taxa_are_rows = FALSE)
+sampledatawocont <- sample_data(metadata[sample_names(OTUwocont),]) # only take the samples that are present in the OTU table
+
+phywocont <- phyloseq(OTUwocont, sampledatawocont, taxotable)
+
+
+
+#only pulled the reindeer samples for the graphic without contaminants, 
+#need to do the same for the contaminant only graphic
+reindeersamples <- sample_data(sampledata[c(str_which(sampledata$Seq.label, pattern = "Rt")),])
+
+#could maybe just subset out ecotype samples again, but then only 8??
+#noeco <- (which(metadata$Reindeer.ecotype == "")) #39, some with weird names
+#ecotypemeta <- sample_data(metadata[-c(noeco),])
+
+ecophycont <- phyloseq(OTUwocont, reindeersamples, taxotable)
+
+#aggregating at family level
+OTUfamcont <- microbiome::aggregate_taxa(ecophycont, "Family")
+
+#creating heatmap with clr transformation, top 20 families
+pdf(file = "./images/heatmap20familycont.pdf", height = 5, width = 10)
+plot_taxa_heatmap(OTUfamcont, subset.top = 20, transformation = "clr",
+                  taxonomic.level = "Family", border_color = "grey60",
+                  VariableA = "Reindeer.ecotype")
+dev.off()
+ 
+
+#looking only at contamination taxa
+otusWcont <- full_otu[,c(conts)]
+OTUWcont <- otu_table(otusWcont, taxa_are_rows = FALSE)
+sampledataWcont <- sample_data(metadata[sample_names(OTUWcont),]) # only take the samples that are present in the OTU table
+
+phyWcont <- phyloseq(OTUWcont, sampledataWcont, taxotable)
+
+OTUfamcont <- microbiome::aggregate_taxa(phyWcont, "Family")
+
+#creating heatmap with clr transformation, top 20 families OF CONTAMINATION
+pdf(file = "./images/TOPCONTAMINANTS.pdf", height = 5, width = 10)
+plot_taxa_heatmap(OTUfamcont, subset.top = 20, transformation = "clr",
+                  taxonomic.level = "Family", border_color = "grey60",
+                  VariableA = "Reindeer.ecotype")
+dev.off()
