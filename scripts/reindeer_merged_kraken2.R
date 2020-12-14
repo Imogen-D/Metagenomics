@@ -4,7 +4,7 @@ library(taxize)
 
 meta <- read.csv("data/reindeer_sample_metadate_merged.txt",sep="\t",header=T)
 
-euk<-read.table("data/kraken2_otu_table_merged_201129.txt",sep="\t",header=T,skip = 1,comment.char = "") %>% 
+euk<-read.table("../kraken2_otu_table_merged_201129.txt",sep="\t",header=T,skip = 1,comment.char = "") %>% 
   rename(taxa="X.OTU.ID") %>%
   mutate(taxa=paste0("X",taxa)) %>% 
   pivot_longer(cols=-taxa) %>% 
@@ -34,11 +34,11 @@ taxa_names$genus.species<-ifelse(is.na(taxa_names$species),
 
 rt.euk<-euk %>% 
   rownames_to_column("samples") %>%
-  filter(grepl("_201112",samples) | grepl("_201125",samples)) %>% 
+  filter(grepl("_201125",samples) | grepl("_201111",samples)) %>%
   # filter(grepl("^Rt",x = samples)) %>% # select only reindeer
   mutate(samples=gsub("\\_.*","",samples),
          samples=gsub("_bracken","",samples)) %>%  # clean up column names
-  select(samples,which(colnames(.) %in% as.character(taxa_names$tax_id))) %>% 
+  select(samples, which(colnames(.) %in% taxa_names$tax_id)) %>%
   column_to_rownames("samples")
 
 # colnames(rt.euk) <- ifelse(taxa_names$tax_id %in% colnames(rt.euk),taxa_names$species,taxa_names$tax_id)
