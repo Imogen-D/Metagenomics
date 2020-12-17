@@ -89,9 +89,9 @@ ecophycont <- prune_samples(keep_samples,phywocont)
 OTUfamcont <- microbiome::aggregate_taxa(ecophycont, "Family")
 
 #creating heatmap with clr transformation, top 20 families
-pdf(file = "./images/heatmap20familycont.pdf", height = 5, width = 12)
-plot_taxa_heatmap(OTUfamcont, subset.top = 20, transformation = "clr",
-                  taxonomic.level = "Family", border_color = "grey60",
+pdf(file = "./images/heatmap20genuscont.pdf", height = 5, width = 12)
+plot_taxa_heatmap(ecophycont, subset.top = 20, transformation = "clr",
+                  taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Reindeer.ecotype")
 dev.off()
 
@@ -101,8 +101,25 @@ phyWcont <- prune_taxa(both.contaminants$contaminant==TRUE,phydata)
 OTUfamcont <- microbiome::aggregate_taxa(phyWcont, "Family")
 
 #creating heatmap with clr transformation, top 20 families OF CONTAMINATION
-pdf(file = "./images/TOPCONTAMINANTS.pdf", height = 5, width = 12)
-plot_taxa_heatmap(OTUfamcont, subset.top = 20, transformation = "clr",
-                  taxonomic.level = "Family", border_color = "grey60",
+
+pdf(file = "./images/TOPCONTAMINANTS_genus.pdf", height = 5, width = 12)
+plot_taxa_heatmap(phyWcont, subset.top = 20, transformation = "clr",
+                  taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Sample.R_cat")
 dev.off()
+
+### Gut fungi
+# list of genuses
+gut.fungi<-c("Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
+
+# check if any of these are in the contaminant taxa
+data.frame(tax_table(phyWcont)) %>% filter(Genus %in% gut.fungi)
+
+# good, they are not excluded, so how does the abundance of these taxa differ?
+# filter by matching genus, then grab taxa id
+gut.fungi.taxa<-data.frame(tax_table(phywocont)) %>% filter(Genus %in% gut.fungi) %>% rownames(.)
+# prune the OTU table
+phygut<-prune_taxa(gut.fungi.taxa,phywocont)
+# plot a heatmap
+plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Reindeer.ecotype",transformation = "clr")
+# even though the Piromyces are highly abundant in samples & blanks, they were not excluded by decontam, which is good (?)
