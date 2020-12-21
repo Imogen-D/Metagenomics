@@ -109,7 +109,8 @@ plot_taxa_heatmap(phyWcont, subset.top = 20, transformation = "clr",
 dev.off()
 
 ### Gut fungi
-# list of genuses
+# list of genera from here:  https://doi.org/10.1371/journal.pone.0151220
+# consider adding taxa from Rumen Fungi book chapter: 10.1007/978-81-322-2401-3_7
 gut.fungi<-c("Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
 
 # check if any of these are in the contaminant taxa
@@ -121,5 +122,5 @@ gut.fungi.taxa<-data.frame(tax_table(phywocont)) %>% filter(Genus %in% gut.fungi
 # prune the OTU table
 phygut<-prune_taxa(gut.fungi.taxa,phywocont)
 # plot a heatmap
-plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Reindeer.ecotype",transformation = "clr")
+plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
 # even though the Piromyces are highly abundant in samples & blanks, they were not excluded by decontam, which is good (?)
