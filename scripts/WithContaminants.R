@@ -13,6 +13,8 @@ library(ggplot2)
 library(microbiomeutilities)
 library(decontam)
 library(tibble)
+source("scripts/ancom_v2.1.R")
+
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
@@ -124,3 +126,44 @@ phygut<-prune_taxa(gut.fungi.taxa,phywocont)
 # plot a heatmap
 plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
 # even though the Piromyces are highly abundant in samples & blanks, they were not excluded by decontam, which is good (?)
+
+
+plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.coll.year",transformation = "clr")
+#plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.coll.date",transformation = "clr")
+plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Ext.date",transformation = "clr")
+plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.province",transformation = "clr")
+plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.district",transformation = "clr")
+plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.locality",transformation = "clr")
+
+meta_data <- as.data.frame(sample_data(phygut)) #I haven't used the ANCOM filtering method for structural zeros
+feature_table <- t(otu_table(phygut))
+
+out <- ANCOM(feature_table, meta_data, main_var = "Sample.R_cat")
+write.table(out$out, file = "./images/ANCOM/sampletype.txt")
+pdf(file = "./images/ANCOM/sampletype.pdf", height = 5, width = 12)
+out$fig
+dev.off()
+
+out <- ANCOM(feature_table, meta_data, main_var = "Reindeer.ecotype")
+write.table(out$out, file = "./images/ANCOM/ecotype.txt")
+pdf(file = "./images/ANCOM/ecotype.pdf", height = 5, width = 12)
+out$fig
+dev.off()
+
+out <- ANCOM(feature_table, meta_data, main_var = "Ext.date")
+write.table(out$out, file = "./images/ANCOM/extractiondate.txt")
+pdf(file = "./images/ANCOM/extractiondate.pdf", height = 5, width = 12)
+out$fig
+dev.off()
+
+out <- ANCOM(feature_table, meta_data, main_var = "Spec.province")
+write.table(out$out, file = "./images/ANCOM/province.txt")
+pdf(file = "./images/ANCOM/province.pdf", height = 5, width = 12)
+out$fig
+dev.off()
+
+out <- ANCOM(feature_table, meta_data, main_var = "Spec.district")
+write.table(out$out, file = "./images/ANCOM/district.txt")
+pdf(file = "./images/ANCOM/district.pdf", height = 5, width = 12)
+out$fig
+dev.off()
