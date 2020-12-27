@@ -198,3 +198,31 @@ pdf(file = "./images/humanoral.pdf", height = 5, width = 12)
 plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
 dev.off()
 #many aspergillus
+
+all_meta_data <- as.data.frame(sample_data(humanphygut)) #I haven't used the ANCOM filtering method for structural zeros
+all_feature_table <- t(otu_table(humanphygut))
+
+out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype")
+write.table(out$out, file = "./images/ANCOM/allecotype.txt")
+pdf(file = "./images/ANCOM/allecotype.pdf", height = 5, width = 12)
+out$fig
+dev.off()
+
+
+data <- lapply(all_feature_table,as.numeric)
+data <- as.data.frame(data)
+adonis(data ~ t(all_meta_data$Sample.R_cat), data = data)
+
+#trying to work out peranova
+data(dune)
+data(dune.env)
+## default test by terms
+adonis2(dune ~ Management*A1, data = dune.env)
+## overall tests
+adonis2(dune ~ Management*A1, data = dune.env, by = NULL)
+
+
+#data <- as.data.frame(all_feature_table)
+
+adonis(distance(physeq, method="bray") ~ Treatment,
+       data = metadata)
