@@ -167,3 +167,34 @@ write.table(out$out, file = "./images/ANCOM/district.txt")
 pdf(file = "./images/ANCOM/district.pdf", height = 5, width = 12)
 out$fig
 dev.off()
+
+
+#human oral fungi from https://doi.org/10.1080/21505594.2016.1252015
+#combined with rumen fungi, above, no overlap?? Seems odd
+humanoralfungi <- c("Agaricus", "Alternaria", "Aspergillus", "Aureobasidium", "Bipolaris",
+  "Bullera", "Candida", "Cladosporium", "Coprinus", "Cryptococcus", "Curvularia",
+  "Cyberlindnera", "Cystofilobasidium", "Cytospora", "Debaryomyces", "Didymella",
+  "Dioszegia", "Epicoccum", "Erythrobasidium", "Exophiala", "Filobasidium", "Fusarium",
+  "Glomus", "Hanseniaspora", "Irpex", "Kluyveromyces", "Lenzites", "Leptosphaerulina",
+  "Malassezia", "Mrakia", "Naganishia", "Penicillium", "Phaeosphaeria", "Phoma", "Pichia",
+  "Pisolithus", "Pyrenochaetopsis", "Ramularia", "Rhizocarpon", "Rhizopus", "Rhodosporidiobolus",
+  "Rhodotorula", "Saccharomyces", "Sarcinomyces", "Scedosporium", "Sporobolomyces", "Talaromyces",
+  "Taphrina", "Tausonia", "Teratosphaeria", "Torulaspora", "Trametes", "Trichoderma", "Trichosporon",
+  "Wallemia", "Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
+
+# check if any of these are in the contaminant taxa
+data.frame(tax_table(phyWcont)) %>% filter(Genus %in% humanoralfungi)
+#22 excluded, but remember @ genus level, so some species of genus may still be incl
+
+
+# filter by matching genus, then grab taxa id
+humangut.fungi.taxa<-data.frame(tax_table(phywocont)) %>% filter(Genus %in% humanoralfungi) %>% rownames(.)
+# prune the OTU table
+humanphygut<-prune_taxa(humangut.fungi.taxa,phywocont)
+# plot a heatmap
+plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
+#Two leftmost taxa very abundant? Rt1 and 009
+pdf(file = "./images/humanoral.pdf", height = 5, width = 12)
+plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
+dev.off()
+#many aspergillus
