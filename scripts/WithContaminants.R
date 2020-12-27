@@ -110,7 +110,7 @@ dev.off()
 
 ### Gut fungi
 # list of genera from here:  https://doi.org/10.1371/journal.pone.0151220
-# consider adding taxa from Rumen Fungi book chapter: 10.1007/978-81-322-2401-3_7
+# consider adding taxa from Rumen Fungi book chapter: 10.1007/978-81-322-2401-3_7 = same genera
 gut.fungi<-c("Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
 
 # check if any of these are in the contaminant taxa
