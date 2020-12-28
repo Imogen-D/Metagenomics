@@ -14,6 +14,7 @@ library(microbiomeutilities)
 library(decontam)
 library(tibble)
 source("scripts/ancom_v2.1.R")
+library(vegan)
 
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
@@ -199,7 +200,7 @@ plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA 
 dev.off()
 #many aspergillus
 
-all_meta_data <- as.data.frame(sample_data(humanphygut)) #I haven't used the ANCOM filtering method for structural zeros
+all_meta_data <- data.frame(sample_data(humanphygut)) #I haven't used the ANCOM filtering method for structural zeros
 all_feature_table <- t(otu_table(humanphygut))
 
 out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype")
@@ -209,20 +210,18 @@ out$fig
 dev.off()
 
 
-data <- lapply(all_feature_table,as.numeric)
-data <- as.data.frame(data)
-adonis(data ~ t(all_meta_data$Sample.R_cat), data = data)
+complete.cases(all_meta_data$Sample.R_cat)
+k <- complete.cases()
 
-#trying to work out peranova
-data(dune)
-data(dune.env)
-## default test by terms
-adonis2(dune ~ Management*A1, data = dune.env)
-## overall tests
-adonis2(dune ~ Management*A1, data = dune.env, by = NULL)
+#PERMANOVA
+permanova <- adonis(t(all_feature_table) ~ Sample.R_cat, data = all_meta_data, permutations=99, method = "bray")
+#print(as.data.frame(permanova$aov.tab)["Sample.R_cat", "Pr(>F)"])
 
 
-#data <- as.data.frame(all_feature_table)
+#ran but missing data - also adonis need distance matrix???
 
-adonis(distance(physeq, method="bray") ~ Treatment,
-       data = metadata)
+permanova <- adonis(t(otu) ~ group,
+                    data = meta, permutations=99, method = "bray")
+
+# P-value
+#print(as.data.frame(permanova$aov.tab)["group", "Pr(>F)"])
