@@ -203,15 +203,30 @@ dev.off()
 all_meta_data <- data.frame(sample_data(humanphygut)) #I haven't used the ANCOM filtering method for structural zeros
 all_feature_table <- t(otu_table(humanphygut))
 
-out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype")
-write.table(out$out, file = "./images/ANCOM/allecotype.txt")
-pdf(file = "./images/ANCOM/allecotype.pdf", height = 5, width = 12)
+##this function here, how do I incoporate a new colour variable??
+out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
+write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
+pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
 out$fig
 dev.off()
 
+#this one didn't run, too much data??
+#with all data, jsut without contaminants
+nocontmetadata <- data.frame(sample_data(phywocont))
+nocontfeaturetable <- t(otu_table(phywocont))
+nocontaminantsout <- ANCOM(nocontfeaturetable, nocontmetadata, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
 
+write.table(nocontaminantsout$out, file = "./images/ANCOM/alltaxa.txt")
+pdf(file = "./images/ANCOM/alltaxa.pdf", height = 5, width = 12)
+nocontaminantsout$fig
+dev.off()
+
+
+#junk from here down
 complete.cases(all_meta_data$Sample.R_cat)
 k <- complete.cases()
+
+
 
 #PERMANOVA
 permanova <- adonis(t(all_feature_table) ~ Sample.R_cat, data = all_meta_data, permutations=99, method = "bray")
