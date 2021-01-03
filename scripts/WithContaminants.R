@@ -15,6 +15,7 @@ library(decontam)
 library(tibble)
 source("scripts/ancom_v2.1.R")
 library(vegan)
+library(plyr)
 
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
@@ -220,6 +221,10 @@ write.table(nocontaminantsout$out, file = "./images/ANCOM/alltaxa.txt")
 pdf(file = "./images/ANCOM/alltaxa.pdf", height = 5, width = 12)
 nocontaminantsout$fig
 dev.off()
+
+
+
+#ordination
 
 
 #junk from here down
