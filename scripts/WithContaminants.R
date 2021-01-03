@@ -227,8 +227,8 @@ dev.off()
 data.ord <- ordinate(completephy, method = "MDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(phywocont, data.ord)
 
-p1 = plot_ordination(GP1, GP.ord, type="taxa", color="Phylum", title="taxa")
-print(p1)
+#p1 = plot_ordination(GP1, GP.ord, type="taxa", color="Phylum", title="taxa")
+#print(p1)
 
 #junk from here down
 complete.cases(all_meta_data$Sample.R_cat)
