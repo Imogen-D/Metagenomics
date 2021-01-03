@@ -224,8 +224,11 @@ dev.off()
 
 
 #ordination
-data.ord <- ordinate(completephy, method = "MDS", distance = "bray") #incomplete dataset
+completephy <- microbiome::transform(phywocont, "clr",shift = 0.1)
+data.ord <- ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(phywocont, data.ord)
+#???
+
 
 #p1 = plot_ordination(GP1, GP.ord, type="taxa", color="Phylum", title="taxa")
 #print(p1)
