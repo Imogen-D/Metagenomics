@@ -229,7 +229,12 @@ data.ord <- ordinate(completephy, method = "NMDS", distance = "bray") #incomplet
 p1 = plot_ordination(phywocont, data.ord)
 #???
 
+any(colSums(otu_table(phywocont)) < 0)
 
+non.zero <- (which(colSums(otu_table(phywocont)) > 0))
+
+prune_taxa(non.zero, phywocont)
+prun
 #p1 = plot_ordination(GP1, GP.ord, type="taxa", color="Phylum", title="taxa")
 #print(p1)
 
