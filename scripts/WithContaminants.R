@@ -2,6 +2,7 @@
 
 library(usethis)
 use_git_config(user.name = "Imogen-D", user.email = "imogen.dumville@gmail.com")
+
 library(dplyr)
 library(phyloseq)
 library(rentrez)
@@ -16,7 +17,6 @@ library(tibble)
 source("scripts/ancom_v2.1.R")
 library(vegan)
 library(plyr)
-
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
@@ -124,7 +124,7 @@ data.frame(tax_table(phyWcont)) %>% filter(Genus %in% gut.fungi)
 # filter by matching genus, then grab taxa id
 gut.fungi.taxa<-data.frame(tax_table(phywocont)) %>% filter(Genus %in% gut.fungi) %>% rownames(.)
 # prune the OTU table
-phygut<-prune_taxa(gut.fungi.taxa,phywocont)
+phygut<-filter_taxa(phywocont,Genus %in% gut.fungi)
 # plot a heatmap
 plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
 # even though the Piromyces are highly abundant in samples & blanks, they were not excluded by decontam, which is good (?)
@@ -224,9 +224,14 @@ dev.off()
 
 
 #ordination
-completephy <- microbiome::transform(phywocont, "clr",shift = 0.1)
+# how many empty rows?
+sum(rowSums(otu_table(phywocont))==0)
+non.zero<- prune_samples(names(which(sample_sums(phywocont)>0)),phywocont)
+completephy <- microbiome::transform(non.zero, "compositional")
+
 data.ord <- ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
-p1 = plot_ordination(phywocont, data.ord)
+p1 = plot_ordination(phywocont.nonz, data.ord,color = "Reindeer.ecotype")+
+  stat_ellipse()
 #???
 
 any(colSums(otu_table(phywocont)) < 0)
