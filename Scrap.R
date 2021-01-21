@@ -1,22 +1,9 @@
-#script to produce heatmap for top 20 fungal families in reindeer samples WITH CONTAMINANTS REMOVED
-
-#load packages
-library(usethis)
-use_git_config(user.name = "Imogen-D", user.email = "imogen.dumville@gmail.com")
-library(dplyr)
-library(phyloseq)
-library(tidyr)
-library(ggplot2)
-library(microbiomeutilities)
-library(decontam)
-source("scripts/ancom_v2.1.R")
-library(vegan)
-
+#Scrap script
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
 full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
   select(which(colSums(.) > 0))  # remove empty taxa
-  # filter(rowSums(.) > 0) # remove empty samples
+# filter(rowSums(.) > 0) # remove empty samples
 
 colnames(full_otu) <- str_replace(colnames(full_otu), "X", "")
 OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
@@ -59,16 +46,16 @@ table(both.contaminants$contaminant)
 
 # overlap between frequency and both
 length(intersect(rownames(freq.contaminants[freq.contaminants$contaminant==TRUE,]),
-          rownames(both.contaminants[both.contaminants$contaminant==TRUE,])))
+                 rownames(both.contaminants[both.contaminants$contaminant==TRUE,])))
 
 # overlap between prevalance and both
 length(intersect(rownames(prev.contaminants[prev.contaminants$contaminant==TRUE,]),
-rownames(both.contaminants[both.contaminants$contaminant==TRUE,])))
+                 rownames(both.contaminants[both.contaminants$contaminant==TRUE,])))
 
 # each of these methods exclude a non-overlapping set of contaminants (?)
 length(intersect(intersect(rownames(prev.contaminants[prev.contaminants$contaminant==TRUE,]),
-          rownames(freq.contaminants[freq.contaminants$contaminant==TRUE,])),
-          rownames(both.contaminants[both.contaminants$contaminant==TRUE,])))
+                           rownames(freq.contaminants[freq.contaminants$contaminant==TRUE,])),
+                 rownames(both.contaminants[both.contaminants$contaminant==TRUE,])))
 
 # use phyloseq to prune taxa instead
 phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phydata)
@@ -76,11 +63,15 @@ phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phydata)
 # only pulled the reindeer samples for the graphic without contaminants, 
 # need to do the same for the contaminant only graphic
 
+# could maybe just subset out ecotype samples again, but then only 8??
+# noeco <- (which(metadata$Reindeer.ecotype == "")) #39, some with weird names
+# ecotypemeta <- sample_data(metadata[-c(noeco),])
+
 keep_samples<-rownames(sample_data(phywocont)[grepl(sample_data(phywocont)$Seq.label, pattern = "Rt")])
 ecophycont <- prune_samples(keep_samples,phywocont)
 
 #aggregating at family level
-#OTUfamcont <- microbiome::aggregate_taxa(ecophycont, "Family")
+OTUfamcont <- microbiome::aggregate_taxa(ecophycont, "Family")
 
 #creating heatmap with clr transformation, top 20 families
 pdf(file = "./images/heatmap20genuscont.pdf", height = 5, width = 12)
@@ -127,7 +118,7 @@ plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sp
 plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.district",transformation = "clr")
 plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.locality",transformation = "clr")
 
-meta_data <- as.data.frame(sample_data(phygut))
+meta_data <- as.data.frame(sample_data(phygut)) #I haven't used the ANCOM filtering method for structural zeros
 feature_table <- t(otu_table(phygut))
 
 out <- ANCOM(feature_table, meta_data, main_var = "Sample.R_cat")
@@ -164,15 +155,15 @@ dev.off()
 #human oral fungi from https://doi.org/10.1080/21505594.2016.1252015
 #combined with rumen fungi, above, no overlap?? Seems odd
 humanoralfungi <- c("Agaricus", "Alternaria", "Aspergillus", "Aureobasidium", "Bipolaris",
-  "Bullera", "Candida", "Cladosporium", "Coprinus", "Cryptococcus", "Curvularia",
-  "Cyberlindnera", "Cystofilobasidium", "Cytospora", "Debaryomyces", "Didymella",
-  "Dioszegia", "Epicoccum", "Erythrobasidium", "Exophiala", "Filobasidium", "Fusarium",
-  "Glomus", "Hanseniaspora", "Irpex", "Kluyveromyces", "Lenzites", "Leptosphaerulina",
-  "Malassezia", "Mrakia", "Naganishia", "Penicillium", "Phaeosphaeria", "Phoma", "Pichia",
-  "Pisolithus", "Pyrenochaetopsis", "Ramularia", "Rhizocarpon", "Rhizopus", "Rhodosporidiobolus",
-  "Rhodotorula", "Saccharomyces", "Sarcinomyces", "Scedosporium", "Sporobolomyces", "Talaromyces",
-  "Taphrina", "Tausonia", "Teratosphaeria", "Torulaspora", "Trametes", "Trichoderma", "Trichosporon",
-  "Wallemia", "Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
+                    "Bullera", "Candida", "Cladosporium", "Coprinus", "Cryptococcus", "Curvularia",
+                    "Cyberlindnera", "Cystofilobasidium", "Cytospora", "Debaryomyces", "Didymella",
+                    "Dioszegia", "Epicoccum", "Erythrobasidium", "Exophiala", "Filobasidium", "Fusarium",
+                    "Glomus", "Hanseniaspora", "Irpex", "Kluyveromyces", "Lenzites", "Leptosphaerulina",
+                    "Malassezia", "Mrakia", "Naganishia", "Penicillium", "Phaeosphaeria", "Phoma", "Pichia",
+                    "Pisolithus", "Pyrenochaetopsis", "Ramularia", "Rhizocarpon", "Rhizopus", "Rhodosporidiobolus",
+                    "Rhodotorula", "Saccharomyces", "Sarcinomyces", "Scedosporium", "Sporobolomyces", "Talaromyces",
+                    "Taphrina", "Tausonia", "Teratosphaeria", "Torulaspora", "Trametes", "Trichoderma", "Trichosporon",
+                    "Wallemia", "Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
 
 # check if any of these are in the contaminant taxa
 data.frame(tax_table(phyWcont)) %>% filter(Genus %in% humanoralfungi)
