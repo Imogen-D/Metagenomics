@@ -12,6 +12,10 @@ library(decontam)
 source("scripts/ancom_v2.1.R")
 library(vegan)
 
+library(nlme)
+library(tidyverse)
+library(compositions)
+
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
 full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
