@@ -5,6 +5,7 @@ meta_data = as.data.frame(sample_data(phywocont))
 feature_table = as.data.frame(otu_table(phywocont))
 
 
+#even dropping to no threshold it removes everything? I tried with the normal values as on https://github.com/FrederickHuangLin/ANCOM/blob/master/README.md
 feature_table = otu_table(phywocont); sample_var = "Seq.label"; group_var = NULL;
 out_cut = 0.00; zero_cut = 1; neg_lb = FALSE; lib_cut = 0
 prepro = feature_table_pre_process(feature_table, meta_data, sample_var, group_var, 
@@ -27,6 +28,7 @@ t_run = t_end - t_start # around 30s
 
 
 #with adjustment for age of sample? (check spec.coll.year before running)
+#haven't run this yet, was going to try do it on UPPMAX but struggling to set it up
 main_var = "Reindeer.ecotype"; p_adj_method = "BH"; alpha = 0.05
 adj_formula = "Spec.coll.year"; rand_formula = NULL
 feature_table = otu_table(phywocont)
