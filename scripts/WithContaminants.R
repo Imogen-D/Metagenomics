@@ -19,8 +19,8 @@ library(compositions)
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
 full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
-  select(which(colSums(.) > 0))  # remove empty taxa
-  # filter(rowSums(.) > 0) # remove empty samples
+  select(which(colSums(.) > 0)) %>%   # remove empty taxa
+  filter(rowSums(.) > 0) # remove empty samples
 
 colnames(full_otu) <- str_replace(colnames(full_otu), "X", "")
 OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
@@ -45,20 +45,27 @@ sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples 
 # making full phyloseq data format
 phydata <- phyloseq(OTU, sampledata,taxotable)
 
+# transform to relative abundance
+phydata.ra  <- transform_sample_counts(phydata, function(x) x / sum(x) )
+
+# only OTUs greater than 5% relative abundance are kept.
+thresh<-as.numeric(quantile(mean(microbiome::abundances(phydata.ra),na.rm = T),probs = 0.05))
+phydata.filt <- filter_taxa(phydata.ra, function(x) sum(x) >= thresh, TRUE)
+
 ##### CONTAMINANT FILTERING #####
 # create single variable for control samples
-controls<-phydata@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank","Swab")
+controls<-phydata.filt@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank","Swab")
 
 # prevalence based filtering
-prev.contaminants <- isContaminant(phydata, method="prevalence",neg=controls, threshold = 0.5)
+prev.contaminants <- isContaminant(phydata.filt, method="prevalence",neg=controls, threshold = 0.5)
 table(prev.contaminants$contaminant)
 
 # frequency based filtering
-freq.contaminants <- isContaminant(phydata, method="frequency",conc= "Seq.copies.in.pool", threshold = 0.1)
+freq.contaminants <- isContaminant(phydata.filt, method="frequency",conc= "Seq.copies.in.pool", threshold = 0.1)
 table(freq.contaminants$contaminant)
 
 # both prevalance and frequency based filtering
-both.contaminants <- isContaminant(phydata, method="either",neg = controls,conc = "Seq.copies.in.pool",threshold = c(0.1,0.5))
+both.contaminants <- isContaminant(phydata.filt, method="either",neg = controls,conc = "Seq.copies.in.pool",threshold = c(0.1,0.5))
 table(both.contaminants$contaminant)
 
 # overlap between frequency and both
@@ -75,7 +82,7 @@ length(intersect(intersect(rownames(prev.contaminants[prev.contaminants$contamin
           rownames(both.contaminants[both.contaminants$contaminant==TRUE,])))
 
 # use phyloseq to prune taxa instead
-phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phydata)
+phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phydata.filt)
 
 # only pulled the reindeer samples for the graphic without contaminants, 
 # need to do the same for the contaminant only graphic
@@ -94,7 +101,7 @@ plot_taxa_heatmap(ecophycont, subset.top = 20, transformation = "clr",
 dev.off()
 
 #looking only at contamination taxa
-phyWcont <- prune_taxa(both.contaminants$contaminant==TRUE,phydata)
+phyWcont <- prune_taxa(both.contaminants$contaminant==TRUE,phydata.filt)
 
 OTUfamcont <- microbiome::aggregate_taxa(phyWcont, "Family")
 
@@ -106,7 +113,7 @@ plot_taxa_heatmap(phyWcont, subset.top = 20, transformation = "clr",
                   VariableA = "Sample.R_cat")
 dev.off()
 
-### Gut fungi
+##### Gut fungi #####
 # list of genera from here:  https://doi.org/10.1371/journal.pone.0151220
 # consider adding taxa from Rumen Fungi book chapter: 10.1007/978-81-322-2401-3_7 = same genera
 gut.fungi<-c("Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
@@ -117,8 +124,10 @@ data.frame(tax_table(phyWcont)) %>% filter(Genus %in% gut.fungi)
 # good, they are not excluded, so how does the abundance of these taxa differ?
 # filter by matching genus, then grab taxa id
 gut.fungi.taxa<-data.frame(tax_table(phywocont)) %>% filter(Genus %in% gut.fungi) %>% rownames(.)
+
 # prune the OTU table
-phygut<-filter_taxa(phywocont,Genus %in% gut.fungi)
+phygut<-subset_taxa(phywocont,Genus %in% gut.fungi)
+
 # plot a heatmap
 plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
 # even though the Piromyces are highly abundant in samples & blanks, they were not excluded by decontam, which is good (?)
@@ -131,6 +140,82 @@ plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sp
 plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.district",transformation = "clr")
 plot_taxa_heatmap(phygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Spec.locality",transformation = "clr")
 
+#human oral fungi from https://doi.org/10.1080/21505594.2016.1252015
+#combined with rumen fungi, above, no overlap?? Seems odd
+humanoralfungi <- c("Agaricus", "Alternaria", "Aspergillus", "Aureobasidium", "Bipolaris",
+  "Bullera", "Candida", "Cladosporium", "Coprinus", "Cryptococcus", "Curvularia",
+  "Cyberlindnera", "Cystofilobasidium", "Cytospora", "Debaryomyces", "Didymella",
+  "Dioszegia", "Epicoccum", "Erythrobasidium", "Exophiala", "Filobasidium", "Fusarium",
+  "Glomus", "Hanseniaspora", "Irpex", "Kluyveromyces", "Lenzites", "Leptosphaerulina",
+  "Malassezia", "Mrakia", "Naganishia", "Penicillium", "Phaeosphaeria", "Phoma", "Pichia",
+  "Pisolithus", "Pyrenochaetopsis", "Ramularia", "Rhizocarpon", "Rhizopus", "Rhodosporidiobolus",
+  "Rhodotorula", "Saccharomyces", "Sarcinomyces", "Scedosporium", "Sporobolomyces", "Talaromyces",
+  "Taphrina", "Tausonia", "Teratosphaeria", "Torulaspora", "Trametes", "Trichoderma", "Trichosporon",
+  "Wallemia", "Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
+
+# check if any of these are in the contaminant taxa
+data.frame(tax_table(phyWcont)) %>% filter(Genus %in% humanoralfungi)
+#22 excluded, but remember @ genus level, so some species of genus may still be incl
+
+
+# filter by matching genus, then grab taxa id
+humanphygut<-subset_taxa(phywocont,Genus %in% humanoralfungi)
+
+# plot a heatmap
+plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
+#Two leftmost taxa very abundant? Rt1 and 009
+pdf(file = "./images/humanoral.pdf", height = 5, width = 12)
+plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
+dev.off()
+#many aspergillus
+
+##### ANCOM #####
+all_meta_data <- data.frame(sample_data(humanphygut)) #I haven't used the ANCOM filtering method for structural zeros
+all_feature_table <- t(otu_table(humanphygut))
+
+##this function here, how do I incoporate a new colour variable??
+out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
+write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
+pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
+out$fig
+dev.off()
+
+#this one didn't run, too much data??
+#with all data, jsut without contaminants
+nocontmetadata <- data.frame(sample_data(phywocont))
+nocontfeaturetable <- t(otu_table(phywocont))
+nocontaminantsout <- ANCOM(nocontfeaturetable, nocontmetadata, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
+
+write.table(nocontaminantsout$out, file = "./images/ANCOM/alltaxa.txt")
+pdf(file = "./images/ANCOM/alltaxa.pdf", height = 5, width = 12)
+nocontaminantsout$fig
+dev.off()
+
+##### ordination ##### 
+# how many empty rows?
+sum(rowSums(otu_table(phywocont))==0)
+non.zero<- prune_samples(names(which(sample_sums(phywocont)>0)),phywocont)
+completephy <- microbiome::transform(phywocont, "compositional")
+
+data.ord <- ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
+p1 = plot_ordination(completephy, data.ord,color = "Reindeer.ecotype")+
+  stat_ellipse()
+#???
+
+##### PERMANOVA ##### 
+permanova <- adonis(otu_table(completephy) ~ Sample.R_cat, data = all_meta_data, permutations=99, method = "bray")
+#print(as.data.frame(permanova$aov.tab)["Sample.R_cat", "Pr(>F)"])
+
+
+#ran but missing data - also adonis need distance matrix???
+
+permanova <- adonis(t(otu) ~ group,
+                    data = meta, permutations=99, method = "bray")
+
+# P-value
+#print(as.data.frame(permanova$aov.tab)["group", "Pr(>F)"])
+
+##### ANCOM #####
 meta_data <- as.data.frame(sample_data(phygut))
 feature_table <- t(otu_table(phygut))
 
@@ -163,95 +248,3 @@ write.table(out$out, file = "./images/ANCOM/district.txt")
 pdf(file = "./images/ANCOM/district.pdf", height = 5, width = 12)
 out$fig
 dev.off()
-
-
-#human oral fungi from https://doi.org/10.1080/21505594.2016.1252015
-#combined with rumen fungi, above, no overlap?? Seems odd
-humanoralfungi <- c("Agaricus", "Alternaria", "Aspergillus", "Aureobasidium", "Bipolaris",
-  "Bullera", "Candida", "Cladosporium", "Coprinus", "Cryptococcus", "Curvularia",
-  "Cyberlindnera", "Cystofilobasidium", "Cytospora", "Debaryomyces", "Didymella",
-  "Dioszegia", "Epicoccum", "Erythrobasidium", "Exophiala", "Filobasidium", "Fusarium",
-  "Glomus", "Hanseniaspora", "Irpex", "Kluyveromyces", "Lenzites", "Leptosphaerulina",
-  "Malassezia", "Mrakia", "Naganishia", "Penicillium", "Phaeosphaeria", "Phoma", "Pichia",
-  "Pisolithus", "Pyrenochaetopsis", "Ramularia", "Rhizocarpon", "Rhizopus", "Rhodosporidiobolus",
-  "Rhodotorula", "Saccharomyces", "Sarcinomyces", "Scedosporium", "Sporobolomyces", "Talaromyces",
-  "Taphrina", "Tausonia", "Teratosphaeria", "Torulaspora", "Trametes", "Trichoderma", "Trichosporon",
-  "Wallemia", "Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
-
-# check if any of these are in the contaminant taxa
-data.frame(tax_table(phyWcont)) %>% filter(Genus %in% humanoralfungi)
-#22 excluded, but remember @ genus level, so some species of genus may still be incl
-
-
-# filter by matching genus, then grab taxa id
-humangut.fungi.taxa<-data.frame(tax_table(phywocont)) %>% filter(Genus %in% humanoralfungi) %>% rownames(.)
-# prune the OTU table
-humanphygut<-prune_taxa(humangut.fungi.taxa,phywocont)
-# plot a heatmap
-plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
-#Two leftmost taxa very abundant? Rt1 and 009
-pdf(file = "./images/humanoral.pdf", height = 5, width = 12)
-plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
-dev.off()
-#many aspergillus
-
-all_meta_data <- data.frame(sample_data(humanphygut)) #I haven't used the ANCOM filtering method for structural zeros
-all_feature_table <- t(otu_table(humanphygut))
-
-##this function here, how do I incoporate a new colour variable??
-out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
-write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
-pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
-out$fig
-dev.off()
-
-#this one didn't run, too much data??
-#with all data, jsut without contaminants
-nocontmetadata <- data.frame(sample_data(phywocont))
-nocontfeaturetable <- t(otu_table(phywocont))
-nocontaminantsout <- ANCOM(nocontfeaturetable, nocontmetadata, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
-
-write.table(nocontaminantsout$out, file = "./images/ANCOM/alltaxa.txt")
-pdf(file = "./images/ANCOM/alltaxa.pdf", height = 5, width = 12)
-nocontaminantsout$fig
-dev.off()
-
-
-#ordination
-# how many empty rows?
-sum(rowSums(otu_table(phywocont))==0)
-non.zero<- prune_samples(names(which(sample_sums(phywocont)>0)),phywocont)
-completephy <- microbiome::transform(non.zero, "compositional")
-
-data.ord <- ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
-p1 = plot_ordination(phywocont.nonz, data.ord,color = "Reindeer.ecotype")+
-  stat_ellipse()
-#???
-
-any(colSums(otu_table(phywocont)) < 0)
-
-non.zero <- (which(colSums(otu_table(phywocont)) > 0))
-
-prune_taxa(non.zero, phywocont)
-prun
-#p1 = plot_ordination(GP1, GP.ord, type="taxa", color="Phylum", title="taxa")
-#print(p1)
-
-#junk from here down
-complete.cases(all_meta_data$Sample.R_cat)
-k <- complete.cases()
-
-
-
-#PERMANOVA
-permanova <- adonis(t(all_feature_table) ~ Sample.R_cat, data = all_meta_data, permutations=99, method = "bray")
-#print(as.data.frame(permanova$aov.tab)["Sample.R_cat", "Pr(>F)"])
-
-
-#ran but missing data - also adonis need distance matrix???
-
-permanova <- adonis(t(otu) ~ group,
-                    data = meta, permutations=99, method = "bray")
-
-# P-value
-#print(as.data.frame(permanova$aov.tab)["group", "Pr(>F)"])
