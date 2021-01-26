@@ -203,14 +203,13 @@ p1 = plot_ordination(completephy, data.ord,color = "Reindeer.ecotype")+
 #???
 
 ##### PERMANOVA ##### 
-permanova <- adonis(otu_table(completephy) ~ Sample.R_cat, data = all_meta_data, permutations=99, method = "bray")
+completephy.bray<-phyloseq::distance(completephy,method="bray")
+permanova <- adonis(completephy.bray ~ Sample.R_cat, data = data.frame(sample_data(completephy)), permutations=99)
 #print(as.data.frame(permanova$aov.tab)["Sample.R_cat", "Pr(>F)"])
-
 
 #ran but missing data - also adonis need distance matrix???
 
-permanova <- adonis(t(otu) ~ group,
-                    data = meta, permutations=99, method = "bray")
+permanova <- adonis(t(otu) ~ group,data = meta, permutations=99, method = "bray")
 
 # P-value
 #print(as.data.frame(permanova$aov.tab)["group", "Pr(>F)"])
