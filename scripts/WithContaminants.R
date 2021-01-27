@@ -3,6 +3,7 @@
 #load packages
 library(usethis)
 use_git_config(user.name = "Imogen-D", user.email = "imogen.dumville@gmail.com")
+
 library(dplyr)
 library(phyloseq)
 library(tidyr)
@@ -168,6 +169,11 @@ pdf(file = "./images/humanoral.pdf", height = 5, width = 12)
 plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
 dev.off()
 #many aspergillus
+
+saveRDS(phywocont, file = "phyloseqwithoutcontaminants.rds")
+saveRDS(humanphygut, file = "phyloseqwithhumantaxa.rds")
+saveRDS(phygut, file = "phyloseqwithrumentaxa.rds")
+
 
 ##### ANCOM #####
 all_meta_data <- data.frame(sample_data(humanphygut)) #I haven't used the ANCOM filtering method for structural zeros
