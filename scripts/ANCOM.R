@@ -13,7 +13,7 @@ meta_data <- data.frame(sample_data(phywocont))
 #  number of items to replace is not a multiple of replacement length"
   
 feature_table = t(otu_table(phywocont)); sample_var = "Seq.label"; group_var = "Reindeer.ecotype";
-out_cut = 0.05; zero_cut = 0.90; neg_lb = FALSE; lib_cut = 1000
+out_cut = 0.05; zero_cut = 0.90; lib_cut = 0; neg_lb = FALSE
 prepro = feature_table_pre_process(feature_table, meta_data, sample_var, group_var, out_cut, zero_cut, neg_lb)
 
 feature_table = prepro$feature_table # Preprocessed feature table
