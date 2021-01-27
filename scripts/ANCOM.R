@@ -1,10 +1,49 @@
 #ANCOM thang
+library(phyloseq)
 
-View(otu_table(phywocont))
-meta_data = as.data.frame(sample_data(phywocont))
-feature_table = as.data.frame(otu_table(phywocont))
+phywocont <- readRDS(file = "phyloseqwithoutcontaminants.rds")
+
+##### ANCOM STRUCTURAL ZEROS #####
+meta_data <- data.frame(sample_data(phywocont))
+
+#trouble is here - as soon as I add the group_var it says "Error in feature_table_pre_process(feature_table, meta_data, sample_var,  : 
+#argument "neg_lb" is missing, with no default
+#In addition: Warning message:
+#  In e[!is.na(group)] <- residuals(f_fit) :
+#  number of items to replace is not a multiple of replacement length"
+  
+feature_table = t(otu_table(phywocont)); sample_var = "Seq.label"; group_var = "Reindeer.ecotype";
+out_cut = 0.05; zero_cut = 0.90; neg_lb = FALSE; lib_cut = 1000
+prepro = feature_table_pre_process(feature_table, meta_data, sample_var, group_var, out_cut, zero_cut, neg_lb)
+
+feature_table = prepro$feature_table # Preprocessed feature table
+meta_data = prepro$meta_data # Preprocessed metadata
+struc_zero = prepro$structure_zeros # Structural zero info
+
+View(struc_zero) #without group_var is NULL
 
 
+
+#copied from WithContaminants.R
+out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
+write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
+pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
+out$fig
+dev.off()
+
+#this one didn't run, too much data??
+#with all data, just without contaminants
+nocontmetadata <- data.frame(sample_data(phywocont))
+nocontfeaturetable <- t(otu_table(phywocont))
+nocontaminantsout <- ANCOM(nocontfeaturetable, nocontmetadata, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
+
+write.table(nocontaminantsout$out, file = "./images/ANCOM/alltaxa.txt")
+pdf(file = "./images/ANCOM/alltaxa.pdf", height = 5, width = 12)
+nocontaminantsout$fig
+dev.off()
+
+
+##OLD_SCRIPT##
 #even dropping to no threshold it removes everything? I tried with the normal values as on https://github.com/FrederickHuangLin/ANCOM/blob/master/README.md
 feature_table = otu_table(phywocont); sample_var = "Seq.label"; group_var = NULL;
 out_cut = 0.00; zero_cut = 1; neg_lb = FALSE; lib_cut = 0
