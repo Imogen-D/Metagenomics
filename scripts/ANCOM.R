@@ -11,11 +11,6 @@ phywocont.rt<-prune_samples(rownames(rt.samples),phywocont)
 
 ##### ANCOM STRUCTURAL ZEROS #####
 
-#trouble is here - as soon as I add the group_var it says "Error in feature_table_pre_process(feature_table, meta_data, sample_var,  : 
-#argument "neg_lb" is missing, with no default
-#In addition: Warning message:
-#  In e[!is.na(group)] <- residuals(f_fit) :
-#  number of items to replace is not a multiple of replacement length"
 prepro = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.rt))), 
                                    rt.samples,
                                    sample_var = "Seq.label",
@@ -29,7 +24,6 @@ feature_table = prepro$feature_table # Preprocessed feature table
 meta_data = prepro$meta_data # Preprocessed metadata
 struc_zero = prepro$structure_zeros # Structural zero info
 
-View(struc_zero) #without group_var is NULL
 
 #copied from WithContaminants.R
 out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
@@ -38,51 +32,29 @@ pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
 out$fig
 dev.off()
 
-#this one didn't run, too much data??
-#with all data, just without contaminants
-nocontmetadata <- data.frame(sample_data(phywocont))
-nocontfeaturetable <- t(otu_table(phywocont))
-nocontaminantsout <- ANCOM(nocontfeaturetable, nocontmetadata, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
-
-write.table(nocontaminantsout$out, file = "./images/ANCOM/alltaxa.txt")
-pdf(file = "./images/ANCOM/alltaxa.pdf", height = 5, width = 12)
-nocontaminantsout$fig
+#adjustment for age (I have run this but not actually looked at results yet - will this even be useful??)
+outadj <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", adj_formula = "Spec.coll.year", color = "Sample.R_cat")
+write.table(outadj$out, file = "./images/ANCOM/ecowageadj.txt")
+pdf(file = "./images/ANCOM/ecowageadj.pdf", height = 5, width = 12)
+outadj$fig
 dev.off()
 
 
-##OLD_SCRIPT##
-#even dropping to no threshold it removes everything? I tried with the normal values as on https://github.com/FrederickHuangLin/ANCOM/blob/master/README.md
-feature_table = otu_table(phywocont); sample_var = "Seq.label"; group_var = NULL;
-out_cut = 0.00; zero_cut = 1; neg_lb = FALSE; lib_cut = 0
-prepro = feature_table_pre_process(feature_table, meta_data, sample_var, group_var, 
-                                   out_cut, zero_cut, neg_lb)
-#feature_table = prepro$feature_table # Preprocessed feature table
-#meta_data = prepro$meta_data # Preprocessed metadata
-#struc_zero = prepro$structure_zeros # Structural zero info
+#okay so now wanting to visually look at the taxa that are signifcant @0.7
+#have gone back to phyloseq object for this, but should I?
 
-prepro$feature_table
+#open txt as table
+ecowcolour <- out$out
+rownames(ecowcolour) <- ecowcolour$taxa_id
+significant <- ecowcolour[which(ecowcolour$detected_0.7 == "TRUE"),]
+sigotu <- otu_table(full_otu[,which(colnames(full_otu) %in% (significant$taxa_id))], taxa_are_rows = FALSE)
+rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
+physig <- merge_phyloseq(sigotu, tax_table(phywocont), sample_data(rt.samples))
 
-main_var = "Reindeer.ecotype"; p_adj_method = "BH"; alpha = 0.05
-adj_formula = NULL; rand_formula = NULL
-feature_table = otu_table(phywocont)
-feature_table <- t(as.data.frame(feature_table))
-meta_data = sample_data(phywocont)
-t_start = Sys.time()
-res = ANCOM(feature_table, meta_data, main_var, struc_zero = NULL, p_adj_method, alpha, adj_formula, rand_formula)
-t_end = Sys.time()
-t_run = t_end - t_start # around 30s
+plot_taxa_heatmap(physig, subset.top = 20, taxanomic.level="Genus", VariableA = "Reindeer.ecotype", transformation = "clr")
+
+#will also do as barplot
+plot_bar(physig, x="Reindeer.ecotype", fill="Genus")
 
 
-#with adjustment for age of sample? (check spec.coll.year before running)
-#haven't run this yet, was going to try do it on UPPMAX but struggling to set it up
-main_var = "Reindeer.ecotype"; p_adj_method = "BH"; alpha = 0.05
-adj_formula = "Spec.coll.year"; rand_formula = NULL
-feature_table = otu_table(phywocont)
-feature_table <- t(as.data.frame(feature_table))
-meta_data = sample_data(phywocont)
-t_start = Sys.time()
-res = ANCOM(feature_table, meta_data, main_var, struc_zero = NULL, p_adj_method, alpha, adj_formula, rand_formula)
-t_end = Sys.time()
-t_run = t_end - t_start 
-
-write_csv(res$out, "outputs/res_moving_pics.csv")
+#repeating for adjusted ANCOM ?
