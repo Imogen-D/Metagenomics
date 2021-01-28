@@ -26,18 +26,19 @@ struc_zero = prepro$structure_zeros # Structural zero info
 
 
 #copied from WithContaminants.R
-out <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat")
+out <- ANCOM(feature_table, meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat", struc_zero = struc_zero)
 write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
 pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
 out$fig
 dev.off()
 
-#adjustment for age (I have run this but not actually looked at results yet - will this even be useful??)
-outadj <- ANCOM(all_feature_table, all_meta_data, main_var = "Reindeer.ecotype", adj_formula = "Spec.coll.year", color = "Sample.R_cat")
-write.table(outadj$out, file = "./images/ANCOM/ecowageadj.txt")
-pdf(file = "./images/ANCOM/ecowageadj.pdf", height = 5, width = 12)
-outadj$fig
-dev.off()
+#adjustment for age (I have run this and appears same as above- from using same structural zero table??)
+
+#outadj <- ANCOM(feature_table, meta_data, main_var = "Reindeer.ecotype", struc_zero = struc_zero, adj_formula = "Spec.coll.year", color = "Sample.R_cat")
+#write.table(outadj$out, file = "./images/ANCOM/ecowageadj.txt")
+#pdf(file = "./images/ANCOM/ecowageadj.pdf", height = 5, width = 12)
+#outadj$fig
+#dev.off()
 
 
 #okay so now wanting to visually look at the taxa that are signifcant @0.7
@@ -54,7 +55,48 @@ physig <- merge_phyloseq(sigotu, tax_table(phywocont), sample_data(rt.samples))
 plot_taxa_heatmap(physig, subset.top = 20, taxanomic.level="Genus", VariableA = "Reindeer.ecotype", transformation = "clr")
 
 #will also do as barplot
-plot_bar(physig, x="Reindeer.ecotype", fill="Genus")
+#this is a bit nuts lol, need to subset some of these - how to do top taxa?
+plot_bar(physig, x="Reindeer.ecotype", fill="Family")
 
 
-#repeating for adjusted ANCOM ?
+#repeating for adjusted ANCOM ? ##ALL the same as above
+#ecowadj <- outadj$out
+#rownames(ecowadj) <- ecowadj$taxa_id
+#significantadj <- ecowadj[which(ecowadj$detected_0.7 == "TRUE"),]
+#sigotuadj <- otu_table(full_otu[,which(colnames(full_otu) %in% (significantadj$taxa_id))], taxa_are_rows = FALSE)
+#rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
+#physigadj <- merge_phyloseq(sigotuadj, tax_table(phywocont), sample_data(rt.samples))
+
+#plot_taxa_heatmap(physigadj, subset.top = 20, taxanomic.level="Genus", VariableA = "Reindeer.ecotype", transformation = "clr")
+
+#will also do as barplot
+#plot_bar(physigadj, x="Reindeer.ecotype", fill="Genus")
+
+
+
+
+##### ANCOM STRUCTURAL ZEROS - now for AGE #####
+
+preproage = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.rt))), 
+                                   rt.samples,
+                                   sample_var = "Seq.label",
+                                   group_var = "Spec.coll.year",
+                                   out_cut = 0.05,
+                                   zero_cut = 0.90,
+                                   neg_lb = FALSE,
+                                   lib_cut = 0)
+
+feature_tableage = preproage$feature_table # Preprocessed feature table
+meta_dataage = preproage$meta_data # Preprocessed metadata
+struc_zeroage = preproage$structure_zeros # Structural zero info
+
+
+#copied from WithContaminants.R
+#error atm: 
+###Error in alr_data[, -(1:i), drop = FALSE] : 
+###incorrect number of dimensions
+outage <- ANCOM(feature_tableage, meta_dataage, main_var = "Spec.coll.year", struc_zeroage, color = "Sample.R_cat")
+write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
+pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
+out$fig
+dev.off()
