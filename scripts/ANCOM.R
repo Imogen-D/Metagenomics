@@ -59,25 +59,9 @@ plot_taxa_heatmap(physig, subset.top = 20, taxanomic.level="Genus", VariableA = 
 plot_bar(physig, x="Reindeer.ecotype", fill="Family")
 
 
-#repeating for adjusted ANCOM ? ##ALL the same as above
-#ecowadj <- outadj$out
-#rownames(ecowadj) <- ecowadj$taxa_id
-#significantadj <- ecowadj[which(ecowadj$detected_0.7 == "TRUE"),]
-#sigotuadj <- otu_table(full_otu[,which(colnames(full_otu) %in% (significantadj$taxa_id))], taxa_are_rows = FALSE)
-#rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
-#physigadj <- merge_phyloseq(sigotuadj, tax_table(phywocont), sample_data(rt.samples))
-
-#plot_taxa_heatmap(physigadj, subset.top = 20, taxanomic.level="Genus", VariableA = "Reindeer.ecotype", transformation = "clr")
-
-#will also do as barplot
-#plot_bar(physigadj, x="Reindeer.ecotype", fill="Genus")
-
-
-
-
 ##### ANCOM STRUCTURAL ZEROS - now for AGE #####
 
-preproage = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.rt))), 
+preproage = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.age))), 
                                    rt.samples,
                                    sample_var = "Seq.label",
                                    group_var = "Spec.coll.year",
@@ -95,7 +79,7 @@ struc_zeroage = preproage$structure_zeros # Structural zero info
 #error atm: 
 ###Error in alr_data[, -(1:i), drop = FALSE] : 
 ###incorrect number of dimensions
-outage <- ANCOM(feature_tableage, meta_dataage, main_var = "Spec.coll.year", struc_zeroage, color = "Sample.R_cat")
+outage <- ANCOM(feature_tableage, meta_dataage, struc_zero = struc_zeroage, main_var = "Spec.coll.year")
 write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
 pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
 out$fig
