@@ -20,11 +20,9 @@ p2 = plot_ordination(completephy, data.ord,color = "Spec.coll.year")+
 ##### PERMANOVA ##### 
 completephy.bray<-phyloseq::distance(completephy,method="bray")
 permanova <- adonis(completephy.bray ~ Sample.R_cat, data = data.frame(sample_data(completephy)), permutations=99)
-#P = 0.09
+#P = 0.06
 
 #print(as.data.frame(permanova$aov.tab)["Sample.R_cat", "Pr(>F)"])
-
-completephy.bray
 
 ecotypepermanova <- adonis(completephy.bray ~ Reindeer.ecotype, data = data.frame(sample_data(completephy)), permutations=99)
 #P = 0.01
