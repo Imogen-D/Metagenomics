@@ -12,10 +12,13 @@ library(microbiomeutilities)
 library(decontam)
 source("scripts/ancom_v2.1.R")
 library(vegan)
-
+library(devtools)
 library(nlme)
 library(tidyverse)
 library(compositions)
+install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+library(pairwiseAdonis)
+
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 

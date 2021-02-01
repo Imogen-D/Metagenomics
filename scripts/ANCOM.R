@@ -5,16 +5,16 @@ source("scripts/ancom_v2.1.R")
 phywocont <- readRDS(file = "phyloseqwithoutcontaminants.rds")
 
 # subset to only reindeer
-meta_data <- data.frame(sample_data(phywocont))
+meta_data <- data.frame(sample_data(phywocont)) %>% rownames_to_column("SampleID")
 rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
-phywocont.rt<-prune_samples(rownames(rt.samples),phywocont)
+phywocont.rt<-prune_samples(rt.samples$SampleID,phywocont)
 
 ##### ANCOM STRUCTURAL ZEROS #####
 
-prepro = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.rt))), 
+prepro = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.rt)))[1:100,], 
                                    rt.samples,
-                                   sample_var = "Seq.label",
-                                   group_var = "Reindeer.ecotype",
+                                   sample_var = "SampleID",
+                                   group_var = "Sample.R_cat",
                                    out_cut = 0.05,
                                    zero_cut = 0.90,
                                    neg_lb = FALSE,
@@ -26,10 +26,10 @@ struc_zero = prepro$structure_zeros # Structural zero info
 
 
 #copied from WithContaminants.R
-out <- ANCOM(feature_table, meta_data, main_var = "Reindeer.ecotype", color = "Sample.R_cat", struc_zero = struc_zero)
+out <- ANCOM(feature_table, meta_data, main_var = "Sample.R_cat", struc_zero = struc_zero)
 write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
 pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
-out$fig
+out$fig + geom_hline(yintercept = quantile(out$out$W,probs = 0.7))
 dev.off()
 
 #adjustment for age (I have run this and appears same as above- from using same structural zero table??)

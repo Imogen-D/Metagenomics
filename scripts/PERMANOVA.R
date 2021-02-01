@@ -3,12 +3,14 @@
 meta_data <- data.frame(sample_data(phywocont))
 rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
 phywocont.rt<-prune_samples(rownames(rt.samples),phywocont)
+phywocont.rt <- prune_taxa(names(which(taxa_sums(phywocont.rt) > 0)),phywocont.rt)
+View(sample_data(phywocont))
 
 sum(rowSums(otu_table(phywocont.rt))==0)
 non.zero<- prune_samples(names(which(sample_sums(phywocont.rt)>0)),phywocont.rt)
 completephy <- microbiome::transform(phywocont.rt, "compositional")
 
-data.ord <- ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
+data.ord <- phyloseq::ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(completephy, data.ord,color = "Reindeer.ecotype")+
   stat_ellipse()
 
@@ -37,3 +39,10 @@ completephyage.bray<-phyloseq::distance(completephyage,method="bray")
 agepermanova <- adonis(completephyage.bray ~ as.character(Spec.coll.year), data = data.frame(sample_data(completephy)), permutations=99)
 #P = 0.01
 
+sample <- data.frame(sample_data(completephy))
+y <- pairwise.adonis(x=otu_table(completephy), factors=sample$Reindeer.ecotype)
+write.csv(y, file = "./images/pairwiseecotype.csv")
+#do I want to use the distance matrix? Or doing bray by default anyway?
+  
+#completephy.bray ~ Reindeer.ecotype, data = data.frame(sample_data(completephy)))
+pairwise
