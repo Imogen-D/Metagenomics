@@ -4,11 +4,17 @@ meta_data <- data.frame(sample_data(phywocont))
 rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
 phywocont.rt<-prune_samples(rownames(rt.samples),phywocont)
 phywocont.rt <- prune_taxa(names(which(taxa_sums(phywocont.rt) > 0)),phywocont.rt)
-View(sample_data(phywocont))
 
-sum(rowSums(otu_table(phywocont.rt))==0)
-non.zero<- prune_samples(names(which(sample_sums(phywocont.rt)>0)),phywocont.rt)
-completephy <- microbiome::transform(phywocont.rt, "compositional")
+#only reindeer + reindeer blanks
+allsample <- data.frame(sample_data(phywocont))
+sample <- data.frame(sample_data(phywocont.rt))
+reindeerwblanks <- prune_samples(allsample$Ext.batch %in% sample$Ext.batch,phywocont)
+
+
+#sum(rowSums(otu_table(reindeerwblanks))==0)
+#non.zero <- prune_samples(names(which(sample_sums(reindeerwblanks)>0)), reindeerwblanks)
+#completephy <- microbiome::transform(phywocont.rt, "compositional")
+completephy <- microbiome::transform(reindeerwblanks, "compositional")
 
 data.ord <- phyloseq::ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(completephy, data.ord,color = "Reindeer.ecotype")+
@@ -17,14 +23,11 @@ p1 = plot_ordination(completephy, data.ord,color = "Reindeer.ecotype")+
 p2 = plot_ordination(completephy, data.ord,color = "Spec.coll.year")+
   stat_ellipse()
 
-#when only reindeer V shitty plots
-
 ##### PERMANOVA ##### 
 completephy.bray<-phyloseq::distance(completephy,method="bray")
 permanova <- adonis(completephy.bray ~ Sample.R_cat, data = data.frame(sample_data(completephy)), permutations=99)
 #P = 0.06
-
-#print(as.data.frame(permanova$aov.tab)["Sample.R_cat", "Pr(>F)"])
+#now 0.01
 
 ecotypepermanova <- adonis(completephy.bray ~ Reindeer.ecotype, data = data.frame(sample_data(completephy)), permutations=99)
 #P = 0.01
@@ -39,10 +42,11 @@ completephyage.bray<-phyloseq::distance(completephyage,method="bray")
 agepermanova <- adonis(completephyage.bray ~ as.character(Spec.coll.year), data = data.frame(sample_data(completephy)), permutations=99)
 #P = 0.01
 
-sample <- data.frame(sample_data(completephy))
-y <- pairwise.adonis(x=otu_table(completephy), factors=sample$Reindeer.ecotype)
-write.csv(y, file = "./images/pairwiseecotype.csv")
+complete <- data.frame(sample_data(completephy))
+y <- pairwise.adonis(x=otu_table(completephy), factors=complete$Reindeer.ecotype)
+write.csv(y, file = "./images/pairwiseecotype2.csv")
+
+#lots more significant using the blanks than with just reindeer taxa...?
 #do I want to use the distance matrix? Or doing bray by default anyway?
-  
-#completephy.bray ~ Reindeer.ecotype, data = data.frame(sample_data(completephy)))
-pairwise
+
+
