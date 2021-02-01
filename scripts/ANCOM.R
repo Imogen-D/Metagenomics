@@ -111,28 +111,78 @@ struc_zeroeco = preproeco$structure_zeros # Structural zero info
 outeco <- ANCOM(feature_tableeco, meta_dataeco, main_var = "generaleco", struc_zero = struc_zeroeco)
 write.table(outeco$out, file = "./images/ANCOM/generaleco.txt")
 pdf(file = "./images/ANCOM/generaleco.pdf", height = 5, width = 12)
-outeco$fig + geom_hline(yintercept = quantile(out$out$W,probs = 0.7))
+outeco$fig + geom_hline(yintercept = quantile(outeco$out$W,probs = 0.7))
 dev.off()
 
-
-#oridnation with smaller eco dataset
-reindeerwblanks <- prune_samples(allsample$Ext.batch %in% sample$Ext.batch,phywocont)
+#oridnation + Pairwise with balnks of Reindeer eco dataset
+allsample <- data.frame(sample_data(phywocont))
+#allsample[c(37,38),] #reindeer
+blanks <- allsample$Ext.batch %in% sample$Ext.batch
+blanks[37:38] <- TRUE
+reindeerwblanks <- prune_samples(blanks, phywocont)
 
 reindeersample <- data.frame(sample_data(reindeerwblanks))
-blankeco <- c(rep("Blank", 18), generaleco)
+blankeco <- c(rep("Blank", 18), rep("Swab", 2), generaleco)
 reindeersample$generaleco <- blankeco
 reindeersample <- sample_data(reindeersample)
 reindeerwblanks <- merge_phyloseq(reindeerwblanks, reindeersample)
 
-#sum(rowSums(otu_table(reindeerwblanks))==0)
-#non.zero <- prune_samples(names(which(sample_sums(reindeerwblanks)>0)), reindeerwblanks)
-#completephy <- microbiome::transform(phywocont.rt, "compositional")
 completephy <- microbiome::transform(reindeerwblanks, "compositional")
 
 data.ord <- phyloseq::ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(completephy, data.ord,color = "generaleco")+
   stat_ellipse()
 
-#pariwise with more general ecotypes
 y <- pairwise.adonis(x=otu_table(completephy), factors=reindeersample$generaleco)
 write.csv(y, file = "./images/pairwiseecotype3.csv")
+
+
+
+
+
+#Just Svalbard + Land samples ANCOM, pairwise, permanova
+
+sample <- data.frame(sample_data(phywocont.rt))
+current <- sample$Sample.R_cat == "Reindeer_hist"
+SvalbardvLand <- prune_samples(current, phywocont.rt)
+sL <- data.frame(sample_data(SvalbardvLand))
+
+SvalLand <- c("Svalbard", "Land", "Land", "Land", "Land", "Land",
+                "Land", "Land", "Land", "Land", "Land", "Svalbard",
+                "Land", "Land", "Land", "Land", "Land", "Svalbard",
+               "Land", "Land", "Svalbard", "Land", "Land",
+                "Land",  "Land", "Land", "Svalbard", "Land", "Svalbard")
+
+sL$generaleco <- SvalLand
+sL <- sample_data(sL)
+SvalbardvLand <- merge_phyloseq(SvalbardvLand, sL)
+
+
+preproSL = feature_table_pre_process(feature_table = data.frame(t(otu_table(SvalbardvLand))), 
+                                      sL,
+                                      sample_var = "Seq.label",
+                                      group_var = "generaleco",
+                                      out_cut = 0.05,
+                                      zero_cut = 0.90,
+                                      neg_lb = FALSE,
+                                      lib_cut = 0)
+
+feature_tableSL = preproSL$feature_table # Preprocessed feature table
+meta_dataSL = preproSL$meta_data # Preprocessed metadata
+struc_zeroSL = preproSL$structure_zeros # Structural zero info
+
+outSL <- ANCOM(feature_tableSL, meta_dataSL, main_var = "generaleco", struc_zero = struc_zeroSL)
+write.table(outSL$out, file = "./images/ANCOM/SL.txt")
+pdf(file = "./images/ANCOM/SL.pdf", height = 5, width = 12)
+outSL$fig + geom_hline(yintercept = quantile(outSL$out$W,probs = 0.7)) #0.7 inf
+dev.off()
+
+y <- pairwise.adonis(x=otu_table(SvalbardvLand), factors=sL$generaleco)
+write.csv(y, file = "./images/pairwiseSL.csv")
+#Padj = 0.034
+
+SLtransform <- microbiome::transform(SvalbardvLand, "compositional")
+
+data.ordSL <- phyloseq::ordinate(SLtransform, method = "NMDS", distance = "bray") #incomplete dataset
+p1 = plot_ordination(SLtransform, data.ordSL, color = "generaleco")+
+  stat_ellipse()

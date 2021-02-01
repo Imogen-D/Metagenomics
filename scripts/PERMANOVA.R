@@ -46,8 +46,6 @@ complete <- data.frame(sample_data(completephy))
 y <- pairwise.adonis(x=otu_table(completephy), factors=complete$Reindeer.ecotype)
 write.csv(y, file = "./images/pairwiseecotype2.csv")
 
-#lots more significant using the blanks than with just reindeer taxa...?
-#do I want to use the distance matrix? Or doing bray by default anyway?
 
 
 
