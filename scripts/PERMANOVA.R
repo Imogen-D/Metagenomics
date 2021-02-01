@@ -50,3 +50,4 @@ write.csv(y, file = "./images/pairwiseecotype2.csv")
 #do I want to use the distance matrix? Or doing bray by default anyway?
 
 
+
