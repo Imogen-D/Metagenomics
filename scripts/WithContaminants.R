@@ -54,7 +54,13 @@ phydata.ra  <- transform_sample_counts(phydata, function(x) x / sum(x) )
 
 # only OTUs greater than 5% relative abundance are kept.
 thresh<-as.numeric(quantile(mean(microbiome::abundances(phydata.ra),na.rm = T),probs = 0.05))
-phydata.filt <- filter_taxa(phydata.ra, function(x) sum(x) >= thresh, TRUE)
+#phydata.filt <- filter_taxa(phydata.ra, function(x) sum(x) >= thresh, TRUE)
+
+
+### from here prune taxa - > remake phylo with absolute #'s not relative
+
+phydata.filt <- filter_taxa(prune_taxa(taxa_names(phydata.ra), phydata), function(x) sum(x) >= thresh, TRUE)
+
 
 ##### CONTAMINANT FILTERING #####
 # create single variable for control samples
@@ -98,7 +104,7 @@ ecophycont <- prune_samples(keep_samples,phywocont)
 #OTUfamcont <- microbiome::aggregate_taxa(ecophycont, "Family")
 
 #creating heatmap with clr transformation, top 20 families
-pdf(file = "./images/heatmap20genuscont.pdf", height = 5, width = 12)
+pdf(file = "./images/heatmap20genuswocont.pdf", height = 5, width = 12)
 plot_taxa_heatmap(ecophycont, subset.top = 20, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Reindeer.ecotype")
@@ -106,8 +112,6 @@ dev.off()
 
 #looking only at contamination taxa
 phyWcont <- prune_taxa(both.contaminants$contaminant==TRUE,phydata.filt)
-
-OTUfamcont <- microbiome::aggregate_taxa(phyWcont, "Family")
 
 #creating heatmap with clr transformation, top 20 families OF CONTAMINATION
 
@@ -186,7 +190,19 @@ completephy <- microbiome::transform(phywocont, "compositional")
 data.ord <- ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(completephy, data.ord,color = "Reindeer.ecotype")+
   stat_ellipse()
-#???
+
+###look at blank samples - abundances? What taxa still here?###
+otu_table(phywocont)
+
+meta_data <- data.frame(sample_data(phywocont))
+
+s <- sample_data(phywocont)
+
+blank.samples<-meta_data %>% filter(grepl(c("blank"), Reindeer.ecotype))
+blank.samples <- sample_data(blank.samples)
+phywocont.blanks<- prune_samples(blank.samples$Seq.label, phywocont)
+B <- as.data.frame(otu_table(phywocont.blanks))
+mean(colSums(B))
 
 ##### PERMANOVA ##### 
 completephy.bray<-phyloseq::distance(completephy,method="bray")

@@ -186,3 +186,23 @@ SLtransform <- microbiome::transform(SvalbardvLand, "compositional")
 data.ordSL <- phyloseq::ordinate(SLtransform, method = "NMDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(SLtransform, data.ordSL, color = "generaleco")+
   stat_ellipse()
+
+#permanova
+SL.bray<-phyloseq::distance(SvalbardvLand,method="bray")
+SLpermanova <- adonis(SL.bray ~ generaleco, data = data.frame(sample_data(SvalbardvLand)), permutations=99)
+
+
+#Taxa unique
+Mainland <- subset_samples(SvalbardvLand, generaleco=="Land")
+Svalbard <- subset_samples(SvalbardvLand, generaleco=="Svalbard")
+
+otuSval <- as.data.frame(which(colSums(otu_table(Svalbard)) != 0))
+S <- as.data.frame(otu_table(Svalbard))
+Svaltaxa <- S[colnames(otu_table(Svalbard)) %in% rownames(otuSval)] 
+#Svaltaxa <- rownames(otuSval)
+
+#??
+otuLand <- as.data.frame(which(colSums(otu_table(Mainland)) != 0))
+M <- as.data.frame(otu_table(Mainland))
+Landtaxa <- M[colnames(otu_table(Mainland)) %in% rownames(otuLand)] 
+#Landtaxa <- rownames(otuLand)
