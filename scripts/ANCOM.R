@@ -2,7 +2,7 @@
 library(phyloseq)
 source("scripts/ancom_v2.1.R")
 
-phywocont <- readRDS(file = "phyloseqwithoutcontaminants.rds")
+#phywocont <- readRDS(file = "phyloseqwithoutcontaminants.rds")
 
 # subset to only reindeer
 meta_data <- data.frame(sample_data(phywocont)) %>% rownames_to_column("SampleID")
@@ -11,7 +11,7 @@ phywocont.rt<-prune_samples(rt.samples$SampleID,phywocont)
 
 ##### ANCOM STRUCTURAL ZEROS #####
 
-prepro = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.rt)))[1:100,], 
+prepro = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.rt))), 
                                    rt.samples,
                                    sample_var = "SampleID",
                                    group_var = "Sample.R_cat",
@@ -31,35 +31,33 @@ write.table(out$out, file = "./images/ANCOM/ecowcolour.txt")
 pdf(file = "./images/ANCOM/ecowcolour.pdf", height = 5, width = 12)
 out$fig + geom_hline(yintercept = quantile(out$out$W,probs = 0.7))
 dev.off()
-
-#adjustment for age (I have run this and appears same as above- from using same structural zero table??)
-
-#outadj <- ANCOM(feature_table, meta_data, main_var = "Reindeer.ecotype", struc_zero = struc_zero, adj_formula = "Spec.coll.year", color = "Sample.R_cat")
-#write.table(outadj$out, file = "./images/ANCOM/ecowageadj.txt")
-#pdf(file = "./images/ANCOM/ecowageadj.pdf", height = 5, width = 12)
-#outadj$fig
-#dev.off()
-
+#Only 96 taxa here
 
 #okay so now wanting to visually look at the taxa that are signifcant @0.7
 #have gone back to phyloseq object for this, but should I?
+
+
+R <- data.frame(otu_table(phywocont.rt))
 
 #open txt as table
 ecowcolour <- out$out
 rownames(ecowcolour) <- ecowcolour$taxa_id
 significant <- ecowcolour[which(ecowcolour$detected_0.7 == "TRUE"),]
 sigotu <- otu_table(full_otu[,which(colnames(full_otu) %in% (significant$taxa_id))], taxa_are_rows = FALSE)
-rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
+
+meta_data <- data.frame(sample_data(phywocont)) %>% rownames_to_column("SampleID")
+rt.samples<- meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
+rownames(rt.samples) <- rt.samples$SampleID
+phywocont.rt<-prune_samples(rt.samples$SampleID,phywocont)
+
 physig <- merge_phyloseq(sigotu, tax_table(phywocont), sample_data(rt.samples))
 
-plot_taxa_heatmap(physig, subset.top = 20, taxanomic.level="Genus", VariableA = "Reindeer.ecotype", transformation = "clr")
+plot_taxa_heatmap(physig, subset.top = 6, taxanomic.level="Genus", VariableA = "Reindeer.ecotype", transformation = "clr")
 
-#will also do as barplot
-#this is a bit nuts lol, need to subset some of these - how to do top taxa?
 plot_bar(physig, x="Reindeer.ecotype", fill="Family")
 
 
-##### ANCOM STRUCTURAL ZEROS - now for AGE #####
+##### ANCOM STRUCTURAL ZEROS - now for AGE - SKIPPED #####
 
 preproage = feature_table_pre_process(feature_table = data.frame(t(otu_table(phywocont.age))), 
                                    rt.samples,
@@ -121,6 +119,21 @@ blanks <- allsample$Ext.batch %in% sample$Ext.batch
 blanks[37:38] <- TRUE
 reindeerwblanks <- prune_samples(blanks, phywocont)
 
+
+notblanks <- allsample$Sample.R_cat == "ExtBlank"
+notblanks[37:38] <- TRUE
+justblanks <- prune_samples(notblanks, phywocont)
+jb <- data.frame(otu_table(justblanks))
+b <- jb %>%
+  select(which(colSums(.) > 0)) %>%   # remove empty taxa
+  filter(rowSums(.) > 0)
+#76 taxa
+#remove empties reqd + meanColSums
+plot_taxa_heatmap(justblanks, subset.top = 76, taxanomic.level="Genus", VariableA = "AccessionNo", transformation = "clr")
+mean(colSums(b)) #124.4189
+mean(rowSums(b)) #4447.086
+
+
 reindeersample <- data.frame(sample_data(reindeerwblanks))
 blankeco <- c(rep("Blank", 18), rep("Swab", 2), generaleco)
 reindeersample$generaleco <- blankeco
@@ -128,7 +141,7 @@ reindeersample <- sample_data(reindeersample)
 reindeerwblanks <- merge_phyloseq(reindeerwblanks, reindeersample)
 
 completephy <- microbiome::transform(reindeerwblanks, "compositional")
-
+#completephy is transformed
 data.ord <- phyloseq::ordinate(completephy, method = "NMDS", distance = "bray") #incomplete dataset
 p1 = plot_ordination(completephy, data.ord,color = "generaleco")+
   stat_ellipse()
@@ -192,7 +205,7 @@ SL.bray<-phyloseq::distance(SvalbardvLand,method="bray")
 SLpermanova <- adonis(SL.bray ~ generaleco, data = data.frame(sample_data(SvalbardvLand)), permutations=99)
 
 
-#Taxa unique
+#Taxa unique ###Ignore this bs for now, needs fixing
 Mainland <- subset_samples(SvalbardvLand, generaleco=="Land")
 Svalbard <- subset_samples(SvalbardvLand, generaleco=="Svalbard")
 

@@ -162,7 +162,7 @@ humanoralfungi <- c("Agaricus", "Alternaria", "Aspergillus", "Aureobasidium", "B
   "Wallemia", "Neocallimastix","Anaeromyces","Caecomyces","Cyllamyces","Orpinomyces","Piromyces")
 
 # check if any of these are in the contaminant taxa
-data.frame(tax_table(phyWcont)) %>% filter(Genus %in% humanoralfungi)
+nrow(data.frame(tax_table(phyWcont)) %>% filter(Genus %in% humanoralfungi))
 #22 excluded, but remember @ genus level, so some species of genus may still be incl
 
 
@@ -171,7 +171,6 @@ humanphygut<-subset_taxa(phywocont,Genus %in% humanoralfungi)
 
 # plot a heatmap
 plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
-#Two leftmost taxa very abundant? Rt1 and 009
 pdf(file = "./images/humanoral.pdf", height = 5, width = 12)
 plot_taxa_heatmap(humanphygut,subset.top = 20,taxanomic.level="Genus",VariableA = "Sample.R_cat",transformation = "clr")
 dev.off()
@@ -203,6 +202,9 @@ blank.samples <- sample_data(blank.samples)
 phywocont.blanks<- prune_samples(blank.samples$Seq.label, phywocont)
 B <- as.data.frame(otu_table(phywocont.blanks))
 mean(colSums(B))
+
+
+
 
 ##### PERMANOVA ##### 
 completephy.bray<-phyloseq::distance(completephy,method="bray")
