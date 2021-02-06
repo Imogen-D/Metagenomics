@@ -23,7 +23,21 @@ sum(str_count(sample_names(phydata), "Rt"))
 sum(str_count(sample_names(readphydata), "B"))
 sum(str_count(sample_names(phydata), "B"))
 
-decontaminantsreadphy <- prune_taxa(both.contaminants$contaminant==FALSE, readphydata)
+ntaxa(phydata)
+#6492
+ntaxa(readphydata)
+#6795
+nrow(both.contaminants)
+#6492
+
+
+prunedreadphy <- prune_taxa(taxa_names(phydata), readphydata)
+
+ntaxa(prunedreadphy)
+#[1] 5491
+
+decontaminantsreadphy <- prune_taxa(both.contaminants$contaminant==FALSE, prunedreadphy)
+##blerg not same ntaxa()
 
 ##Pull out blanks = counts for pre decontam for balnks + samples
 ##Decontam? merge phyloseq objects
