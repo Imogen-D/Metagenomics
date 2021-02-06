@@ -47,7 +47,7 @@ taxotable <- tax_table(as.matrix(OTUtaxonomyformatted))
 sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
 
 # making full phyloseq data format
-phydata <- phyloseq(OTU, sampledata,taxotable)
+phydata <- phyloseq(OTU, sampledata, taxotable)
 
 # transform to relative abundance
 phydata.ra  <- transform_sample_counts(phydata, function(x) x / sum(x) )
