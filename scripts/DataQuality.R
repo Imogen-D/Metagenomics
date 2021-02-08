@@ -175,6 +175,39 @@ inswabsandblanks <- inswabsandblanks[,colnames(inswabsandblanks) %in% colnames(i
 inswabsandblanks.read <- inswabsandblanks.read[,colnames(inswabsandblanks.read) %in% colnames(inswabsandblanks)]
 plot(colSums(inswabsandblanks), colSums(inswabsandblanks.read), xlab = "Abundance", ylab = "Read counts", main = "swabs, blanks and samples") #x and y differ
 
+boxplot(colSums(samplesonly.read), colSums(inblanks.read), colSums(inswabsandblanks.read), colSums(inswabs.read), names = c("Samples", "Blanks", "Swabs and Blanks", "Swabs"), log="y")
+boxplot(colSums(samplesonly.read), main = "Samples", plot = FALSE)
+boxplot(colSums(inblanks.read), main = "Blanks")
+boxplot(colSums(inswabsandblanks.read), main = "SwabsAndBlanks")
+boxplot(colSums(inswabs.read), main = "Swabs")
+
+sum(colSums(samplesonly.read) <=  5)
+unique(colSums(samplesonly.read))
+
+#attempting to make data into frame for ggplot()
+a <- as.data.frame(colSums(inswabsandblanks))
+b <- as.data.frame(colSums(inswabsandblanks.read))
+##need to merge by OTU
+
+SB <- data.frame(colSums(inswabsandblanks), colSums(inswabsandblanks.read), rep("S+B", 371), colnames(inswabsandblanks))
+S <- data.frame(colSums(inswabs), colSums(inswabs.read), rep("S+B", 83), colnames(inswabs))
+B <- data.frame(colSums(inblanks), colSums(inblanks.read), rep("S+B", 294), colnames(inblanks))
+Samp <- data.frame(colSums(samplesonly), colSums(samplesonly.read), rep("Reindeer", 5305), colnames(samplesonly))
+
+colnames(SB) <- c("Abundance", "Reads", "Present", "OTU")
+rownames(SB) <- SB$OTU
+colnames(S) <- c("Abundance", "Reads", "Present", "OTU")
+rownames(S) <- S$OTU
+colnames(B) <- c("Abundance", "Reads", "Present", "OTU")
+rownames(B) <- B$OTU
+colnames(Samp) <- c("Abundance", "Reads", "Present", "OTU")
+rownames(Samp) <- Samp$OTU
+
+a <- bind_rows(SB, S)
+b <- bind_rows(a, B)
+all <- bind_rows(b, Samp)
+rownames(all) <- all$OTU #there are duplicate values ahhh -> something when setting rownames of the read and abundance taxa // not actually equal
+
 
 ##blanks and reindeer ?? all but one is same extraction
 rtsample <- data.frame(sample_data(phywocont.rt))
