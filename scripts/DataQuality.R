@@ -13,8 +13,7 @@ colnames(reads) <- str_replace(colnames(reads), "X", "")
 readcounts <- otu_table(reads, taxa_are_rows = FALSE)
 readphydata <- phyloseq(readcounts, sampledata, taxotable)
 
-##fitlered to aove 5% threshold
-
+#Just checking similarities
 sample_names(readphydata)
 sample_names(phydata.filt)
 sample_names(phydata)
@@ -30,42 +29,38 @@ ntaxa(readphydata)
 nrow(both.contaminants)
 #6492
 
-
+#pruning to common taxa
 prunedreadphy <- prune_taxa(taxa_names(phydata), readphydata)
-
 ntaxa(prunedreadphy)
 #[1] 5491
-
 prunedphy <- prune_taxa(taxa_names(prunedreadphy), phydata)
 ntaxa(prunedphy)
 #[1] 5491
 
-
+##fitlered to above 5% threshold
 # transform to relative abundance
 phydata.ra  <- transform_sample_counts(prunedphy, function(x) x / sum(x) )
-
 # only OTUs greater than 5% relative abundance are kept.
 thresh<-as.numeric(quantile(mean(microbiome::abundances(phydata.ra),na.rm = T),probs = 0.05))
-#phydata.filt <- filter_taxa(phydata.ra, function(x) sum(x) >= thresh, TRUE)
-
-
 ### from here prune taxa - > remake phylo with absolute #'s not relative
+phydata.filt <- filter_taxa(prune_taxa(taxa_names(phydata.ra), prunedphy), function(x) sum(x) >= thresh, TRUE)
 
-phydata.filt <- filter_taxa(prune_taxa(taxa_names(phydata.ra), phydata), function(x) sum(x) >= thresh, TRUE)
-
+#filter read data
+phydata.ra.read  <- transform_sample_counts(prunedreadphy, function(x) x / sum(x) )
+# only OTUs greater than 5% relative abundance are kept.
+thresh.read<-as.numeric(quantile(mean(microbiome::abundances(phydata.ra.read),na.rm = T),probs = 0.05))
+### from here prune taxa - > remake phylo with absolute #'s not relative
+phydata.filt.read <- filter_taxa(prune_taxa(taxa_names(phydata.ra.read), prunedreadphy), function(x) sum(x) >= thresh, TRUE)
 
 ##### CONTAMINANT FILTERING #####
 # create single variable for control samples
 controls<-phydata.filt@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank","Swab")
-
-# both prevalance and frequency based filtering
 both.contaminants <- isContaminant(phydata.filt, method="either",neg = controls,conc = "Seq.copies.in.pool",threshold = c(0.1,0.5))
 table(both.contaminants$contaminant)
-
-# use phyloseq to prune taxa instead
 phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phydata.filt)
 
-decontaminantsreadphy <- prune_taxa(both.contaminants$contaminant==FALSE, prunedreadphy)
+#decontam using abundance data
+decontaminantsreadphy <- prune_taxa(both.contaminants$contaminant==FALSE, phydata.filt.read)
 
 sample <- data.frame(sample_data(phywocont))
 readsample <- data.frame(sample_data(decontaminantsreadphy))
@@ -130,7 +125,7 @@ swab.read <- colnames(otu.swabs.read)
 physwabs.read <- prune_taxa(swab.read, phywocont.swabs.read)
 
 ##how many overlap between swabs and blanks?
-overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #393 taxa
+overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #376 taxa
 
 ##okay so number of taxa aren't the same but will trim dataframes
 #facets for samples only, also in blanks, also in swabs, also in blanks + swabs = 4
@@ -175,8 +170,8 @@ inswabsandblanks <- inswabsandblanks[,colnames(inswabsandblanks) %in% colnames(i
 inswabsandblanks.read <- inswabsandblanks.read[,colnames(inswabsandblanks.read) %in% colnames(inswabsandblanks)]
 plot(colSums(inswabsandblanks), colSums(inswabsandblanks.read), xlab = "Abundance", ylab = "Read counts", main = "swabs, blanks and samples") #x and y differ
 
-boxplot(colSums(samplesonly.read), colSums(inblanks.read), colSums(inswabsandblanks.read), colSums(inswabs.read), names = c("Samples", "Blanks", "Swabs and Blanks", "Swabs"), log="y")
-boxplot(colSums(samplesonly.read), main = "Samples", plot = FALSE)
+boxplot(colSums(samplesonly.read), colSums(inblanks.read), colSums(inswabsandblanks.read), colSums(inswabs.read), names = c("Samples", "Blanks", "S and B", "Swabs"), log="y")
+boxplot(colSums(samplesonly.read), main = "Samples")
 boxplot(colSums(inblanks.read), main = "Blanks")
 boxplot(colSums(inswabsandblanks.read), main = "SwabsAndBlanks")
 boxplot(colSums(inswabs.read), main = "Swabs")
@@ -207,22 +202,3 @@ a <- bind_rows(SB, S)
 b <- bind_rows(a, B)
 all <- bind_rows(b, Samp)
 rownames(all) <- all$OTU #there are duplicate values ahhh -> something when setting rownames of the read and abundance taxa // not actually equal
-
-
-##blanks and reindeer ?? all but one is same extraction
-rtsample <- data.frame(sample_data(phywocont.rt))
-sample <- data.frame(sample_data(phywocont))
-blanks <-sample$Ext.batch %in% rtsample$Ext.batch
-
-
-
-
-
-
-
-
-
-##Pull out blanks = counts for pre decontam for balnks + samples
-##Decontam? merge phyloseq objects
-##Only reindeer blanks
-##Plot TAXA not samples -> reads on y, abundances on x, colour by only in blank / blank and samples / sample only
