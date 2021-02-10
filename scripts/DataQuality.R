@@ -3,31 +3,79 @@
 library(dplyr)
 library(tidyverse)
 library(phyloseq)
+library(usethis)
+use_git_config(user.name = "Imogen-D", user.email = "imogen.dumville@gmail.com")
+
+library(dplyr)
+library(phyloseq)
+library(tidyr)
+library(ggplot2)
+library(microbiomeutilities)
+library(decontam)
+source("scripts/ancom_v2.1.R")
+library(vegan)
+library(devtools)
+library(nlme)
+library(tidyverse)
+library(compositions)
+#install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+library(pairwiseAdonis)
 
 
-#reads <- read.delim("./data/kraken2_otu_table_merged_210203-reads.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
+full_otu <- read.delim("./data/kraken2_otu_table_merged_210203-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
+  select(which(colSums(.) > 0)) %>%   # remove empty taxa
+  filter(rowSums(.) > 0) # remove empty samples
+
+colnames(full_otu) <- str_replace(colnames(full_otu), "X", "")
+OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
+
+#reading metadata table
+metadata <- read.delim("./data/Sample_processing_masterlist.txt", stringsAsFactors=FALSE) %>% 
+  select(-starts_with("X")) %>% 
+  distinct(Seq.label,.keep_all=T) %>%  # remove duplicates, the tidyr way
+  filter(!is.na(Seq.label)) %>% 
+  mutate(Reindeer.ecotype=ifelse(Sample.R_cat == "Reindeer_pre","pre-historic", # fill in some of the blank ecotypes
+                                 ifelse(Sample.R_cat %in% c("ExtBlank","LibBlank","Swab"),"blank",
+                                        ifelse(Sample.R_cat == "" & is.na(Sample.R_cat),"unknown",Reindeer.ecotype))))
+rownames(metadata)<-metadata$Seq.label # add rownames
+
+#reading and formatting taxonomy table, made with classification
+OTUtaxonomyformatted <- read.csv("./data/OTUtaxonomyformattedwcont.csv", row.names=1, stringsAsFactors=FALSE) %>% # read in taxa table saved from taxize 
+  rename_all(str_to_title)  # make the column names into title case
+taxotable <- tax_table(as.matrix(OTUtaxonomyformatted))
+
+sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
+
+# making full phyloseq data format
+phydata <- phyloseq(OTU, sampledata, taxotable)
+
+
+##Making phyloseq object for read information
+reads <- read.delim("./data/kraken2_otu_table_merged_210203-reads.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
   select(which(colSums(.) > 0)) %>%   # remove empty taxa
   filter(rowSums(.) > 0) # remove empty samples
 
 colnames(reads) <- str_replace(colnames(reads), "X", "")
 readcounts <- otu_table(reads, taxa_are_rows = FALSE)
-readphydata <- phyloseq(readcounts, sampledata, taxotable)
+readphydata <- phyloseq(readcounts, sampledata, taxotable) #need to redo taxonomy table
 
-#Just checking similarities
-sample_names(readphydata)
-sample_names(phydata.filt)
-sample_names(phydata)
-sum(str_count(sample_names(readphydata), "Rt"))
-sum(str_count(sample_names(phydata), "Rt"))
-sum(str_count(sample_names(readphydata), "B"))
-sum(str_count(sample_names(phydata), "B"))
+
+#Only extraction # not with reindeer = BE103 and bear swabs BS003, BS005 - remove
+#sample_names(phydata) != 
+wanted <- !(sample_names(phydata) %in% c("BE103", "BS003", "BS005"))
+phydata <- prune_samples(wanted, phydata)
+wanted <- !(sample_names(readphydata) %in% c("BE103", "BS003", "BS005"))
+readphydata <- prune_samples(wanted, readphydata)
 
 ntaxa(phydata)
 #6492
 ntaxa(readphydata)
 #6795
 nrow(both.contaminants)
-#6492
+#5491
+
+sum(!taxa_names(phydata) %in% taxa_names(readphydata))
+#1001
 
 #pruning to common taxa
 prunedreadphy <- prune_taxa(taxa_names(phydata), readphydata)
@@ -39,18 +87,14 @@ ntaxa(prunedphy)
 
 ##fitlered to above 5% threshold
 # transform to relative abundance
-phydata.ra  <- transform_sample_counts(prunedphy, function(x) x / sum(x) )
 # only OTUs greater than 5% relative abundance are kept.
-thresh<-as.numeric(quantile(mean(microbiome::abundances(phydata.ra),na.rm = T),probs = 0.05))
+phydata.ra  <- transform_sample_counts(prunedphy, function(x) x / sum(x) )
 ### from here prune taxa - > remake phylo with absolute #'s not relative
-phydata.filt <- filter_taxa(prune_taxa(taxa_names(phydata.ra), prunedphy), function(x) sum(x) >= thresh, TRUE)
+phydata.filt <- filter_taxa(prune_taxa(taxa_names(phydata.ra), prunedphy), function(x) mean(x) >= 0.05, TRUE)
 
 #filter read data
-phydata.ra.read  <- transform_sample_counts(prunedreadphy, function(x) x / sum(x) )
-# only OTUs greater than 5% relative abundance are kept.
-thresh.read<-as.numeric(quantile(mean(microbiome::abundances(phydata.ra.read),na.rm = T),probs = 0.05))
-### from here prune taxa - > remake phylo with absolute #'s not relative
-phydata.filt.read <- filter_taxa(prune_taxa(taxa_names(phydata.ra.read), prunedreadphy), function(x) sum(x) >= thresh, TRUE)
+phydata.filt.read <- prune_taxa(taxa_names(phydata.filt), prunedreadphy)
+
 
 ##### CONTAMINANT FILTERING #####
 # create single variable for control samples
@@ -62,19 +106,18 @@ phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phydata.filt)
 #decontam using abundance data
 decontaminantsreadphy <- prune_taxa(both.contaminants$contaminant==FALSE, phydata.filt.read)
 
-sample <- data.frame(sample_data(phywocont))
-readsample <- data.frame(sample_data(decontaminantsreadphy))
+#sample <- data.frame(sample_data(phywocont))
+#readsample <- data.frame(sample_data(decontaminantsreadphy))
 
 ##only reindeer
 meta_data <- data.frame(sample_data(phywocont)) %>% rownames_to_column("SampleID")
-rt.samples<-meta_data %>% filter(grepl("Reindeer",Sample.R_cat))
+rt.samples <- meta_data %>% filter(grepl("^Rt",SampleID))
 phywocont.rt <- prune_samples(rt.samples$SampleID,phywocont)
 ##remove taxa without any reads - not required so none are blank only
-##which(colSums(otu.rt) == 0) ## all with reads
+##which(colSums(otu.rt) == 0) ##0
 
 ##just extraction blanks - whats not there?
-meta_data$Sample.R_cat #54 onwards are blanks
-blanksamples <- meta_data[54:96,]
+blanksamples <- meta_data %>% filter(grepl("Blank",Sample.R_cat))
 phywocont.blanks <- prune_samples(blanksamples$SampleID,phywocont)
 
 otu.blanks <- data.frame(otu_table(phywocont.blanks)) %>%
@@ -84,7 +127,7 @@ blank <- colnames(otu.blanks)
 phyblanks <- prune_taxa(blank, phywocont.blanks)
 
 ##just swabs
-swabsamples <- meta_data[97:98,]
+swabsamples <- meta_data %>% filter(grepl("Swab",Sample.R_cat))
 phywocont.swabs <- prune_samples(swabsamples$SampleID, phywocont)
 otu.swabs <- data.frame(otu_table(phywocont.swabs)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
@@ -93,20 +136,21 @@ swab <- colnames(otu.swabs)
 physwabs <- prune_taxa(swab, phywocont.swabs)
 
 ##how many overlap between swabs and blanks?
-overlapphy <- prune_taxa(taxa_names(physwabs), phyblanks) #400 taxa
+overlapphy <- prune_taxa(taxa_names(physwabs), phyblanks) #383 taxa
 
 
 ##so now need to do all of above but with read data
 ##only reindeer
 meta_data_read <- data.frame(sample_data(decontaminantsreadphy)) %>% rownames_to_column("SampleID")
-rt.samples.read <-meta_data_read %>% filter(grepl("Reindeer",Sample.R_cat))
+rt.samples.read <- meta_data_read %>% filter(grepl("^Rt",SampleID))
 phywocont.rt.read <- prune_samples(rt.samples.read$SampleID,decontaminantsreadphy)
+#contains 3 less samples Rt017, 11 and 13 ah
+
 ##remove taxa without any reads - not required so none are blank only
 ##which(colSums(otu.rt) == 0) ## all with reads
 
 ##just extraction blanks - whats not there?
-meta_data_read$Sample.R_cat #before 48 are blanks
-blanksamples.read <- meta_data_read[1:43,]
+blanksamples.read <- meta_data_read %>% filter(grepl("Blank", Sample.R_cat))
 phywocont.blanks.read <- prune_samples(blanksamples.read$SampleID,decontaminantsreadphy)
 
 otu.blanks.read <- data.frame(otu_table(phywocont.blanks.read)) %>%
@@ -114,9 +158,10 @@ otu.blanks.read <- data.frame(otu_table(phywocont.blanks.read)) %>%
 colnames(otu.blanks.read) <- str_replace(colnames(otu.blanks.read), "X", "")
 blank.read <- colnames(otu.blanks.read)
 phyblanks.read <- prune_taxa(blank.read, phywocont.blanks.read)
+#one extra blank
 
 ##just swabs
-swabsamples.read <- meta_data_read[44:45,]
+swabsamples.read <- meta_data_read %>% filter(grepl("Swab",Sample.R_cat))
 phywocont.swabs.read <- prune_samples(swabsamples.read$SampleID, decontaminantsreadphy)
 otu.swabs.read <- data.frame(otu_table(phywocont.swabs.read)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
@@ -125,7 +170,7 @@ swab.read <- colnames(otu.swabs.read)
 physwabs.read <- prune_taxa(swab.read, phywocont.swabs.read)
 
 ##how many overlap between swabs and blanks?
-overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #376 taxa
+overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #380 taxa
 
 ##okay so number of taxa aren't the same but will trim dataframes
 #facets for samples only, also in blanks, also in swabs, also in blanks + swabs = 4
@@ -176,8 +221,10 @@ boxplot(colSums(inblanks.read), main = "Blanks")
 boxplot(colSums(inswabsandblanks.read), main = "SwabsAndBlanks")
 boxplot(colSums(inswabs.read), main = "Swabs")
 
-sum(colSums(samplesonly.read) <=  5)
+sum(rowSums(samplesonly.read) <=  5)
 unique(colSums(samplesonly.read))
+
+
 
 #attempting to make data into frame for ggplot()
 a <- as.data.frame(colSums(inswabsandblanks))
