@@ -1,4 +1,7 @@
 ##Data Quality, Read Counts##
+##So need help on working out how to determine cross contaminants
+## related to (rownames(top_samples) %in% rownames(top_blanks)
+##Visulisations/tidy up of code
 
 library(dplyr)
 library(tidyverse)
@@ -195,6 +198,7 @@ overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #288 ta
 
 ##okay so number of taxa aren't the same but will trim dataframes
 #facets for samples only, also in blanks, also in swabs, also in blanks + swabs = 4
+#need to tidy this up
 samplesonly <- data.frame(otu_table(phywocont.rt))
 samplesonly.read <- data.frame(otu_table(phywocont.rt.read))
 inblanks <- data.frame(otu_table(phyblanks))
@@ -219,7 +223,7 @@ inblanks.read <- inblanks.read[,!(colnames(inblanks.read)) %in% colnames(inswabs
 #same for swabs
 inswabs.read <- inswabs.read[,!(colnames(inswabs.read)) %in% colnames(inswabsandblanks.read)]
 
-#PLOTS
+#PLOTS - currently really ugly???
 boxplot(colSums(samplesonly.read), colSums(inblanks.read), colSums(inswabsandblanks.read), colSums(inswabs.read), names = c("Samples", "Blanks", "S and B", "Swabs"))
 boxplot(colSums(samplesonly.read), main = "Samples")
 boxplot(colSums(inblanks.read), main = "Blanks")
@@ -259,14 +263,14 @@ plot_taxa_heatmap(phywocont.rt, subset.top = 20, transformation = "clr",
 dev.off()
 
 
-df <- data.frame(colSums(otu_table(phywocont.rt)))
+df <- data.frame(colMeans(otu_table(phywocont.rt)))
 top_samples <- df %>% slice_max(df, n = 20) #list of top 20 abundant taxa
 
 ##now can see where from, if cross contam in swabs and/or blanks?
-dfblanks <- data.frame(colSums(otu_table(phywocont.blanks)))
+dfblanks <- data.frame(colMeans(otu_table(phywocont.blanks)))
 top_blanks <- dfblanks %>% slice_max(dfblanks, n = 20)
 
-dfswabs <- data.frame(colSums(otu_table(phywocont.swabs)))
+dfswabs <- data.frame(colMeans(otu_table(phywocont.swabs)))
 top_swabs <- dfswabs %>% slice_max(dfswabs, n = 20)
 
 rownames(top_samples) %in% rownames(top_blanks)
