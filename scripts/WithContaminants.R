@@ -16,13 +16,13 @@ library(devtools)
 library(nlme)
 library(tidyverse)
 library(compositions)
-install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
+#install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis")
 library(pairwiseAdonis)
 
 
 setwd("~/MEME/Uppsala_Katja_Project/Metagenomics") #for local script
 
-full_otu <- read.delim("./data/reindeer_kraken2_otu_table_merged_201129-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
+full_otu <- read.delim("./data/kraken2_otu_table_merged_210203-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
   select(which(colSums(.) > 0)) %>%   # remove empty taxa
   filter(rowSums(.) > 0) # remove empty samples
 
@@ -47,7 +47,7 @@ taxotable <- tax_table(as.matrix(OTUtaxonomyformatted))
 sampledata <- sample_data(metadata[sample_names(OTU),]) # only take the samples that are present in the OTU table
 
 # making full phyloseq data format
-phydata <- phyloseq(OTU, sampledata,taxotable)
+phydata <- phyloseq(OTU, sampledata, taxotable)
 
 # transform to relative abundance
 phydata.ra  <- transform_sample_counts(phydata, function(x) x / sum(x) )

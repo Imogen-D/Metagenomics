@@ -2,4 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-packrat/lib*/
+data/kraken2*.txt
+
