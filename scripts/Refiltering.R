@@ -19,7 +19,7 @@ library(pairwiseAdonis)
 
 ##### ABUNDANCES -  BRACKEN output #####
 ## phyloseq object with abundance data
-full_otu <- read.delim("./data/kraken2_otu_table_merged_210203-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
+full_otu <- read.delim("./data/kraken2_otu_table_merged_210216-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
   select(which(colSums(.) > 0)) %>%   # remove empty taxa
   filter(rowSums(.) > 0) # remove empty samples
 
@@ -64,7 +64,7 @@ phydata <- prune_samples(wanted, phydata)
 saveRDS(phydata,file = "data/phloseq-otu-base.rds")
 
 ##Making phyloseq object for read information
-reads <- read.table("~/Downloads/kraken2_otu_table_merged_210203-reads.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
+reads <- read.table("data/kraken2_otu_table_merged_210216-reads.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
   select(which(colSums(.) > 0))
 
 readcounts <- otu_table(reads, taxa_are_rows = FALSE)
@@ -82,12 +82,14 @@ rownames(read_taxotable)<-OTUtaxonomyformatted$Tax_id[OTUtaxonomyformatted$Tax_i
 read_sampledata <- sample_data(metadata[sample_names(readcounts),])
 
 # making full phyloseq data format
-readphydata <- phyloseq(readcounts, read_sampledata)
+readphydata <- phyloseq(readcounts, read_sampledata,read_taxotable)
 
 #Only extraction # not with reindeer = BE103 and bear swabs BS003, BS005 - remove
 readwanted <- !(sample_names(readphydata) %in% c("BE103", "BS003", "BS005"))
 readphydata <- prune_samples(readwanted, readphydata)
 
+# saving a "base" object, for later use
+saveRDS(readphydata,file = "data/phloseq-read-base.rds")
 
 #NOT PRUNING
 #ABUNDANCE Fitlering
