@@ -91,4 +91,4 @@ readphydata <- phyloseq(readcounts, read_sampledata)
 readwanted <- !(sample_names(readphydata) %in% c("BE103", "BS003", "BS005"))
 readphydata <- prune_samples(readwanted, readphydata)
 
-saveRDS(readphydata,file = "data/phloseq-reads-base.rds")
+saveRDS(readphydata,file = "data/phloseq-read-base.rds")

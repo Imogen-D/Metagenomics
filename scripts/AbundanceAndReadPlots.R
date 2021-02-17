@@ -1,8 +1,5 @@
-ABUN <- readRDS("./data/phloseq-otu-base.rds")
-READS <- readRDS("./data/phloseq-reads-base.rds")
-
-# saving a "base" object, for later use
-saveRDS(readphydata,file = "data/phloseq-read-base.rds")
+phydata <- readRDS("./data/phloseq-otu-base.rds")
+readphydata <- readRDS("./data/phloseq-read-base.rds")
 
 #ABUNDANCE Fitlering
 # abundance filtering function
@@ -26,7 +23,7 @@ abundance_filter_f <- function(count.mat, cutoff) {
 phy.filt <- abundance_filter_f(as.data.frame(otu_table(phydata)), 0.0005) %>%
   select(which(colSums(.) > 0)) %>%   # remove empty taxa
   filter(rowSums(.) > 0)
-phydata.filt <- phyloseq(otu_table(phy.filt, taxa_are_rows = FALSE), sampledata)
+phydata.filt <- phyloseq(otu_table(phy.filt, taxa_are_rows = FALSE), sampledata, tax_table(phydata))
 
 # what taxa were excluded?
 filteredout <- which(!taxa_names(phydata) %in% taxa_names(phydata.filt))
@@ -36,7 +33,7 @@ length(filteredout)
 phyread.filt <- abundance_filter_f(as.data.frame(otu_table(readphydata)), 0.0005) %>%
   select(which(colSums(.) > 0)) %>%   # remove empty taxa
   filter(rowSums(.) > 0)
-phydata.filt.read <- phyloseq(otu_table(phyread.filt, taxa_are_rows = FALSE), sampledata)
+phydata.filt.read <- phyloseq(otu_table(phyread.filt, taxa_are_rows = FALSE), sampledata, tax_table(readphydata))
 
 # what taxa were excluded?
 read.filteredout <- which(!taxa_names(readphydata) %in% taxa_names(phydata.filt.read))
@@ -80,17 +77,21 @@ readphyWcont <- prune_taxa(both.contaminants.read$contaminant==TRUE,phydata.filt
 ## Just keep reindeer
 rt.samples <- sample_names(phywocont)[which(grepl("^Rt",sample_names(phywocont)))]
 phywocont.rt <- prune_samples(rt.samples,phywocont)
+otu.rt <- data.frame(otu_table(phywocont.rt)) %>%
+  select(which(colSums(.) > 0))  # remove empty taxa
+rt <- colnames(otu.rt)
+phyrt <- prune_taxa(rt, phywocont.rt)
 
-##remove taxa without any reads - not required so none are blank only
-##which(colSums(otu.rt) == 0) ##0
+##remove taxa without any reads - lots are blank only???? 679
+
+
 
 ##just extraction blanks - whats not there?
-blanksamples <- sample_names(phywocont)[which(grepl("^B",sample_names(phywocont)))]
+blanksamples <- sample_names(phywocont)[which(grepl(c("BE|BL|Bk"),sample_names(phywocont)))]
 phywocont.blanks <- prune_samples(blanksamples,phywocont)
 
 otu.blanks <- data.frame(otu_table(phywocont.blanks)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
-colnames(otu.blanks) <- str_replace(colnames(otu.blanks), "X", "")
 blank <- colnames(otu.blanks)
 phyblanks <- prune_taxa(blank, phywocont.blanks)
 
@@ -99,12 +100,11 @@ swabsamples <- sample_names(phywocont)[which(grepl("^BS",sample_names(phywocont)
 phywocont.swabs <- prune_samples(swabsamples, phywocont)
 otu.swabs <- data.frame(otu_table(phywocont.swabs)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
-colnames(otu.swabs) <- str_replace(colnames(otu.swabs), "X", "")
 swab <- colnames(otu.swabs)
 physwabs <- prune_taxa(swab, phywocont.swabs)
 
 ##how many overlap between swabs and blanks?
-overlapphy <- intersect(taxa_names(physwabs), taxa_names(phyblanks)) #168 taxa
+overlapphy <- prune_taxa(taxa_names(physwabs), phyblanks) #184 taxa
 
 ##so now need to do all of above but with read data
 ##only reindeer
@@ -113,40 +113,38 @@ phywocont.rt.read <- prune_samples(rt.samples.read,decontaminantsreadphy)
 
 otu.rt.read <- data.frame(otu_table(phywocont.rt.read)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
-colnames(otu.rt.read) <- str_replace(colnames(otu.rt.read), "X", "")
+#colnames(otu.rt.read) <- str_replace(colnames(otu.rt.read), "X", "")
 rt.read <- colnames(otu.rt.read)
 physamples.read <- prune_taxa(rt.read, phywocont.rt.read)
 
 ##just extraction blanks - whats not there?
-blanksamples.read <- sample_names(decontaminantsreadphy)[which(grepl("^B", sample_names(decontaminantsreadphy)))]
-phywocont.blanks.read <- prune_samples(blanksamples.read$SampleID,decontaminantsreadphy)
+blanksamples.read <- sample_names(decontaminantsreadphy)[which(grepl(c("BE|BL|Bk"),sample_names(decontaminantsreadphy)))]
+phywocont.blanks.read <- prune_samples(blanksamples.read,decontaminantsreadphy)
 
 otu.blanks.read <- data.frame(otu_table(phywocont.blanks.read)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
-colnames(otu.blanks.read) <- str_replace(colnames(otu.blanks.read), "X", "")
+#colnames(otu.blanks.read) <- str_replace(colnames(otu.blanks.read), "X", "")
 blank.read <- colnames(otu.blanks.read)
 phyblanks.read <- prune_taxa(blank.read, phywocont.blanks.read)
-#266 taxa not in blanks
 
 
 ##just swabs
-swabsamples.read <- meta_data_read %>% filter(grepl("Swab",Sample.R_cat))
-phywocont.swabs.read <- prune_samples(swabsamples.read$SampleID, decontaminantsreadphy)
+swabsamples.read <- sample_names(decontaminantsreadphy)[which(grepl("^BS",sample_names(decontaminantsreadphy)))]
+phywocont.swabs.read <- prune_samples(swabsamples.read, decontaminantsreadphy)
 otu.swabs.read <- data.frame(otu_table(phywocont.swabs.read)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
-colnames(otu.swabs.read) <- str_replace(colnames(otu.swabs.read), "X", "")
+#colnames(otu.swabs.read) <- str_replace(colnames(otu.swabs.read), "X", "")
 swab.read <- colnames(otu.swabs.read)
 physwabs.read <- prune_taxa(swab.read, phywocont.swabs.read)
-##341 taxa not in swabs
 
 ##how many overlap between swabs and blanks?
-overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #288 taxa
+overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #161 taxa
 
 ##okay so number of taxa aren't the same but will trim dataframes
 #facets for samples only, also in blanks, also in swabs, also in blanks + swabs = 4
 #need to tidy this up
 samplesonly <- data.frame(otu_table(phywocont.rt))
-plot_bo
+#plot_bo
 samplesonly.read <- data.frame(otu_table(phywocont.rt.read))
 inblanks <- data.frame(otu_table(phyblanks))
 inblanks.read <- data.frame(otu_table(phyblanks.read))
@@ -175,10 +173,9 @@ boxplot(colSums(samplesonly.read), main = "Samples")
 boxplot(colSums(inblanks.read), main = "Blanks")
 boxplot(colSums(inswabsandblanks.read), main = "SwabsAndBlanks")
 boxplot(colSums(inswabs.read), main = "Swabs")
-barchart(colSums(samplesonly.read), colSums(inblanks.read), colSums(inswabsandblanks.read), colSums(inswabs.read), names = c("Samples", "Blanks", "S and B", "Swabs"))
 
 #plotting contaminants
-pdf(file = "./images/TOPCONTAMINANTS_1502.pdf", height = 5, width = 12)
+pdf(file = "./images/TOPCONTAMINANTS_1702.pdf", height = 5, width = 12)
 plot_taxa_heatmap(phyWcont, subset.top = 14, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Sample.R_cat")
