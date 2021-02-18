@@ -21,9 +21,7 @@ library(pairwiseAdonis)
 
 ##### ABUNDANCES -  BRACKEN output #####
 ## phyloseq object with abundance data
-full_otu <- read.delim("./data/kraken2_otu_table_merged_210216-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
-  select(which(colSums(.) > 0)) %>%   # remove empty taxa
-  filter(rowSums(.) > 0) # remove empty samples
+full_otu <- read.delim("./data/kraken2_otu_table_merged_210216-otu.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE)
 
 ## OTU table
 OTU <- otu_table(full_otu, taxa_are_rows = FALSE)
@@ -43,9 +41,9 @@ sampledata <- sample_data(metadata[sample_names(OTU),])
 
 # reading and formatting taxonomy table, made with classification
 ##ASK ADRIAN FOR THIS TAXO INFO INFORMATION
-OTUtaxonomyformatted <- read.csv("../taxa.csv", stringsAsFactors=TRUE,na.strings = c("","NA"),colClasses = "factor") %>% # read in taxa table saved from taxize
+OTUtaxonomyformatted <- read.csv("../taxa.csv",header=T,na.strings = c("NA","")) %>% 
+  filter(kingdom == "Fungi") %>% 
   rename_all(str_to_title) %>%    # make the column names into title case
-  mutate(Tax_id = paste0("X",Tax_id)) %>%   # adding the prefix prevents some downstream issues
   select(Tax_id,Phylum:Species) # important to subset here!!!
   
 taxotable <- OTUtaxonomyformatted %>% 
@@ -87,7 +85,7 @@ colnames(read_taxotable) <- colnames(OTUtaxonomyformatted)
 read_sampledata <- sample_data(metadata[sample_names(readcounts),])
 
 # making full phyloseq data format
-readphydata <- phyloseq(readcounts, read_sampledata)
+readphydata <- phyloseq(readcounts, read_sampledata,read_taxotable)
 
 #Only extraction # not with reindeer = BE103 and bear swabs BS003, BS005 - remove
 readwanted <- !(sample_names(readphydata) %in% c("BE103", "BS003", "BS005"))

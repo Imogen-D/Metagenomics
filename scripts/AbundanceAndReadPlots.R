@@ -25,8 +25,8 @@ abundance_filter_f <- function(count.mat, cutoff) {
 
 ## run abundance filtering of taxa on otu data
 phy.filt <- abundance_filter_f(as.data.frame(otu_table(phydata)), 0.0005) %>%
-  select(which(colSums(.) > 0)) %>%   # remove empty taxa
-  filter(rowSums(.) > 0)
+  select(which(colSums(.) > 0))
+
 phydata.filt <- phyloseq(otu_table(phy.filt, taxa_are_rows = FALSE), sampledata, tax_table(phydata))
 
 # what taxa were excluded?
@@ -35,8 +35,8 @@ length(filteredout)
 
 ## run abundance filtering of taxa on read data
 phyread.filt <- abundance_filter_f(as.data.frame(otu_table(readphydata)), 0.0005) %>%
-  select(which(colSums(.) > 0)) %>%   # remove empty taxa
-  filter(rowSums(.) > 0)
+  select(which(colSums(.) > 0))   # remove empty taxa
+  
 phydata.filt.read <- phyloseq(otu_table(phyread.filt, taxa_are_rows = FALSE), sampledata, tax_table(readphydata))
 
 # what taxa were excluded?
