@@ -1,7 +1,9 @@
-phydata <- readRDS("./data/phloseq-otu-base.rds")
-readphydata <- readRDS("./data/phloseq-read-base.rds")
+phydata <- readRDS("./data/phyloseq-otu-base.rds")
+readphydata <- readRDS("./data/phyloseq-read-base.rds")
 sampledata <- sample_data(phydata)
 read_sampledata <- sample_data(readphydata)
+
+# reset the column labels of the taxa tables
 
 #ABUNDANCE Fitlering
 # abundance filtering function
@@ -85,8 +87,6 @@ rt <- colnames(otu.rt)
 phyrt <- prune_taxa(rt, phywocont.rt)
 
 ##remove taxa without any reads - lots are blank only???? 679
-
-
 
 ##just extraction blanks - whats not there?
 blanksamples <- sample_names(phywocont)[which(grepl(c("BE|BL|Bk"),sample_names(phywocont)))]

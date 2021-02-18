@@ -43,14 +43,14 @@ sampledata <- sample_data(metadata[sample_names(OTU),])
 
 # reading and formatting taxonomy table, made with classification
 ##ASK ADRIAN FOR THIS TAXO INFO INFORMATION
-OTUtaxonomyformatted <- read.csv("../taxa.csv", stringsAsFactors=FALSE) %>% # read in taxa table saved from taxize
+OTUtaxonomyformatted <- read.csv("../taxa.csv", stringsAsFactors=TRUE,na.strings = c("","NA"),colClasses = "factor") %>% # read in taxa table saved from taxize
   rename_all(str_to_title) %>%    # make the column names into title case
-  mutate(Tax_id = paste0("X",Tax_id))  # adding the prefix prevents some downstream issues
+  mutate(Tax_id = paste0("X",Tax_id)) %>%   # adding the prefix prevents some downstream issues
+  select(Tax_id,Phylum:Species) # important to subset here!!!
   
 taxotable <- OTUtaxonomyformatted %>% 
-  filter(Tax_id %in% taxa_names(OTU)) %>% 
-  as.data.frame(.) %>% 
-  tax_table(.) # only include the taxa that are found in the OTU table
+  filter(Tax_id %in% taxa_names(OTU))
+taxotable <- tax_table(as.matrix(taxotable)) # only include the taxa that are found in the OTU table
 
 # only use this to make row names if taxa match the OTU table
 rownames(taxotable)<-OTUtaxonomyformatted$Tax_id[OTUtaxonomyformatted$Tax_id %in% taxa_names(OTU)]
@@ -64,7 +64,7 @@ wanted <- !(sample_names(phydata) %in% c("BE103", "BS003", "BS005"))
 phydata <- prune_samples(wanted, phydata)
 
 # saving a "base" object, for later use
-saveRDS(phydata,file = "data/phloseq-otu-base.rds")
+saveRDS(phydata,file = "data/phyloseq-otu-base.rds")
 
 ##Making phyloseq object for read information
 reads <- read.table("./data/kraken2_otu_table_merged_210216-reads.fungi.txt",na.strings = c("","NA"), stringsAsFactors=FALSE) %>% 
@@ -74,12 +74,14 @@ readcounts <- otu_table(reads, taxa_are_rows = FALSE)
 
 # remake taxa table with read taxa
 read_taxotable <- OTUtaxonomyformatted %>% 
-  filter(Tax_id %in% taxa_names(OTU)) %>% 
-  as.data.frame(.) %>% 
-  tax_table(.) # only include the taxa that are found in the OTU table
+  filter(Tax_id %in% taxa_names(OTU))
+read_taxotable <- tax_table(as.matrix(read_taxotable)) # only include the taxa that are found in the OTU table
 
 # only use this to make row names if taxa match the OTU table
 rownames(read_taxotable)<-OTUtaxonomyformatted$Tax_id[OTUtaxonomyformatted$Tax_id %in% taxa_names(OTU)]
+
+# fix column names too
+colnames(read_taxotable) <- colnames(OTUtaxonomyformatted)
 
 # slight mismatch in samples between otu and reads
 read_sampledata <- sample_data(metadata[sample_names(readcounts),])
@@ -91,4 +93,4 @@ readphydata <- phyloseq(readcounts, read_sampledata)
 readwanted <- !(sample_names(readphydata) %in% c("BE103", "BS003", "BS005"))
 readphydata <- prune_samples(readwanted, readphydata)
 
-saveRDS(readphydata,file = "data/phloseq-read-base.rds")
+saveRDS(readphydata,file = "data/phyloseq-read-base.rds")
