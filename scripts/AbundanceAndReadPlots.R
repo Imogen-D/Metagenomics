@@ -1,5 +1,7 @@
 phydata <- readRDS("./data/phloseq-otu-base.rds")
 readphydata <- readRDS("./data/phloseq-read-base.rds")
+sampledata <- sample_data(phydata)
+read_sampledata <- sample_data(readphydata)
 
 #ABUNDANCE Fitlering
 # abundance filtering function
