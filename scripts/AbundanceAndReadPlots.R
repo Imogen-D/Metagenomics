@@ -24,6 +24,7 @@ abundance_filter_f <- function(count.mat, cutoff) {
 }
 
 ## run abundance filtering of taxa on otu data
+
 phy.filt <- abundance_filter_f(as.data.frame(otu_table(phydata)), 0.0005) %>%
   select(which(colSums(.) > 0))
 
