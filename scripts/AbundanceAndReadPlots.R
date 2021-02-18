@@ -58,6 +58,7 @@ table(both.contaminants$contaminant)
 phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phydata.filt)
 
 # keep just the contaminant taxa
+##non decontaminated out
 phyWcont <- prune_taxa(both.contaminants$contaminant==TRUE,phydata.filt)
 
 ### decontam on reads data
@@ -69,6 +70,7 @@ both.contaminants.read <- isContaminant(phydata.filt.read, method="either",neg =
 
 # how many contaminants were filtered out?
 table(both.contaminants.read$contaminant)
+#12
 
 # keep just the non-contaminant taxa
 decontaminantsreadphy <- prune_taxa(both.contaminants.read$contaminant==FALSE, phydata.filt.read)
