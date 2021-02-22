@@ -28,6 +28,7 @@ abundance_filter_f <- function(count.mat, cutoff) {
 phy.filt <- abundance_filter_f(as.data.frame(otu_table(phydata)), 0.0005) %>%
   select(which(colSums(.) > 0))
 
+
 phydata.filt <- phyloseq(otu_table(phy.filt, taxa_are_rows = FALSE), sampledata, tax_table(phydata))
 
 # what taxa were excluded?
@@ -89,7 +90,7 @@ otu.rt <- data.frame(otu_table(phywocont.rt)) %>%
 rt <- colnames(otu.rt)
 phyrt <- prune_taxa(rt, phywocont.rt)
 
-##remove taxa without any reads - lots are blank only???? 679
+##remove taxa without any reads - 2 blank only????
 
 ##just extraction blanks - whats not there?
 blanksamples <- sample_names(phywocont)[which(grepl(c("BE|BL|Bk"),sample_names(phywocont)))]
@@ -109,7 +110,7 @@ swab <- colnames(otu.swabs)
 physwabs <- prune_taxa(swab, phywocont.swabs)
 
 ##how many overlap between swabs and blanks?
-overlapphy <- prune_taxa(taxa_names(physwabs), phyblanks) #184 taxa
+overlapphy <- prune_taxa(taxa_names(physwabs), phyblanks) #228 taxa
 
 ##so now need to do all of above but with read data
 ##only reindeer
@@ -143,14 +144,14 @@ swab.read <- colnames(otu.swabs.read)
 physwabs.read <- prune_taxa(swab.read, phywocont.swabs.read)
 
 ##how many overlap between swabs and blanks?
-overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #161 taxa
+overlapphy.read <- prune_taxa(taxa_names(physwabs.read), phyblanks.read) #285 taxa
 
 ##okay so number of taxa aren't the same but will trim dataframes
 #facets for samples only, also in blanks, also in swabs, also in blanks + swabs = 4
 #need to tidy this up
-samplesonly <- data.frame(otu_table(phywocont.rt))
+samplesonly <- data.frame(otu_table(phyrt))
 #plot_bo
-samplesonly.read <- data.frame(otu_table(phywocont.rt.read))
+samplesonly.read <- data.frame(otu_table(physamples.read))
 inblanks <- data.frame(otu_table(phyblanks))
 inblanks.read <- data.frame(otu_table(phyblanks.read))
 inswabs <- data.frame(otu_table(physwabs))
@@ -180,38 +181,44 @@ boxplot(colSums(inswabsandblanks.read), main = "SwabsAndBlanks")
 boxplot(colSums(inswabs.read), main = "Swabs")
 
 #plotting contaminants
-pdf(file = "./images/TOPCONTAMINANTS_1702.pdf", height = 5, width = 12)
-plot_taxa_heatmap(phyWcont, subset.top = 14, transformation = "clr",
+pdf(file = "./images/TOPCONTAMINANTS_2202.pdf", height = 5, width = 12)
+plot_taxa_heatmap(phyWcont, subset.top = 7, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Sample.R_cat")
 dev.off()
 
-pdf(file = "./images/TOPREADCONTAMINANTS_1502.pdf", height = 5, width = 12)
-plot_taxa_heatmap(phyWcont, subset.top = 13, transformation = "clr",
+pdf(file = "./images/TOPREADCONTAMINANTS_2202.pdf", height = 5, width = 12)
+plot_taxa_heatmap(readphyWcont, subset.top = 12, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Sample.R_cat")
 dev.off()
 
-pdf(file = "./images/TOPTAXA_1502.pdf", height = 5, width = 12)
+pdf(file = "./images/TOPTAXA_2202.pdf", height = 5, width = 12)
 plot_taxa_heatmap(phywocont, subset.top = 20, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Sample.R_cat")
 dev.off()
 
-pdf(file = "./images/TOPREADTAXA_1502.pdf", height = 5, width = 12)
+pdf(file = "./images/TOPREADTAXA_2202.pdf", height = 5, width = 12)
 plot_taxa_heatmap(decontaminantsreadphy, subset.top = 20, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Sample.R_cat")
 dev.off()
 
-pdf(file = "./images/TOPTAXAinsamples_1502.pdf", height = 5, width = 12)
-plot_taxa_heatmap(phywocont.rt, subset.top = 20, transformation = "clr",
+pdf(file = "./images/TOPTAXAinsamples_2202.pdf", height = 5, width = 12)
+plot_taxa_heatmap(phyrt, subset.top = 20, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
                   VariableA = "Sample.R_cat")
 dev.off()
 
+pdf(file = "./images/TOPTAXAinsamples_2202_location.pdf", height = 5, width = 12)
+plot_taxa_heatmap(phyrt, subset.top = 20, transformation = "clr",
+                  taxonomic.level = "Genus", border_color = "grey60",
+                  VariableA = "Spec.nation")
+dev.off()
 
-df <- data.frame(colMeans(otu_table(phywocont.rt)))
+
+df <- data.frame(colMeans(otu_table(phyrt)))
 top_samples <- df %>% slice_max(df, n = 20) #list of top 20 abundant taxa
 
 ##now can see where from, if cross contam in swabs and/or blanks?

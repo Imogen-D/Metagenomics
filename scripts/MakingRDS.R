@@ -18,6 +18,7 @@ library(vegan)
 library(nlme)
 library(compositions)
 library(pairwiseAdonis)
+library(reshape2)
 
 ##### ABUNDANCES -  BRACKEN output #####
 ## phyloseq object with abundance data
