@@ -1,38 +1,38 @@
 SampleID,Spec.county,Spec.district,Spec.kommun,Spec.stated.locality,Spec.locality,Spec.nation.metadata,Reindeer.ecotype.metadata
-Rt009,Svalbard,Spitsbergen,Spitsbergen,NA,Spitzbergen,Norway,arctic
-Rt022,Svalbard,Spitsbergen,Spitsbergen,NA,Spetsbergen,Norway,arctic
-Rt023,Svalbard,Spitsbergen,Spitsbergen,NA,Spetsbergen,Norway,arctic
-Rt029,Svalbard,Spitsbergen,Spitsbergen,NA,Coal Bay, Spetsbergen,Norway,arctic
-Rt035,Svalbard,Spitsbergen,Spitsbergen,NA,Spitzbergen,Norway,arctic
-Rt054,Svalbard,Spitsbergen,Spitsbergen,NA,Spetsbergen,Norway,arctic
-Rt066,Svalbard,NA,Spitsbergen,NA,Spitzbergen,Norway,arctic
-Rt031,NA,NA,NA,NA,NA,unknown,forest
-Rt048,NA,NA,NA,NA,Lappland,unknown,forest
+Rt009,Svalbard,Spitsbergen,Spitsbergen,NA,Spitzbergen,Norway*,arctic
+Rt022,Svalbard,Spitsbergen,Spitsbergen,NA,Spetsbergen,Norway*,arctic
+Rt023,Svalbard,Spitsbergen,Spitsbergen,NA,Spetsbergen,Norway*,arctic
+Rt029,Svalbard,Spitsbergen,Spitsbergen,NA,"Coal Bay, Spetsbergen",Norway*,arctic
+Rt035,Svalbard,Spitsbergen,Spitsbergen,NA,Spitzbergen,Norway*,arctic
+Rt054,Svalbard,Spitsbergen,Spitsbergen,NA,Spetsbergen,Norway*,arctic
+Rt066,Svalbard,NA,Spitsbergen,NA,Spitzbergen,Norway*,arctic
+Rt031,NA,NA,NA,NA,NA,NA,forest
+Rt048,NA,NA,NA,NA,Lappland,NA,forest
 Rt053,Norrbotten,Pajala?,Pajala,NA,Pajalu,Sweden,forest
 Rt010,Norrbotten,Kiruna,Kiruna,NA,Karesuando,Sweden,mountain
-Rt014,Aust-Agder,NA,Aust-Agder_unknown,NA,SW Norway,Norway,mountain
+Rt014,Aust-Agder,NA,Aust-Agder_NA,NA,SW Norway,Norway,mountain
 Rt015,Norrbotten,Kiruna,Kiruna,NA,Karesuando,Sweden,mountain
 Rt016,Norrbotten,Kiruna,Kiruna,NA,Karesuando,Sweden,mountain
 Rt017,Norrbotten,Kiruna,Kiruna,NA,Karesuando,Sweden,mountain
 Rt018,Norrbotten,Kiruna,Kiruna,NA,Karesuando,Sweden,mountain
-Rt019,Norrbotten,Kiruna,Kiruna,NA,Karesuando, Fjälren,Sweden,mountain
+Rt019,Norrbotten,Kiruna,Kiruna,NA,"Karesuando,  Fjälren",Sweden,mountain
 Rt020,Norrbotten,Kiruna,Kiruna,NA,Karesuando,Sweden,mountain
-Rt027,Aust-Agder,Njurdarheim,Aust-Agder_unknown,NA,SW Norway,Norway,mountain
+Rt027,Aust-Agder,Njurdarheim,Aust-Agder_NA,NA,SW Norway,Norway,mountain
 Rt034,Bely Island,NA,Bely Island,NA,NA,Russia,mountain
 Rt038,Bely Island,NA,Bely Island,NA,NA,Russia,mountain
 Rt047,Bely Island,NA,Bely Island,NA,NA,Russia,mountain
 Rt057,Bely Island,NA,Bely Island,NA,NA,Russia,mountain
 Rt064,Norrbotten,Kiruna,Kiruna,NA,Karesuando,Sweden,mountain
-Rt024,Norrbotten,Pajala,Pajala,NA,Kengis bruk, Sahlberg,Sweden,tame
-Rt025,Norrbotten,Pajala,Pajala,NA,Kengis bruk, Sahlberg,Sweden,tame
-Rt026,Norrbotten,Pajala,Pajala,NA,Kengis bruk, Sahlberg,Sweden,tame
-Rt028,Norrbotten,Pajala,Pajala,NA,Kengis bruk, Sahlberg,Sweden,tame
+Rt024,Norrbotten,Pajala,Pajala,NA,"Kengis bruk, Sahlberg",Sweden,tame
+Rt025,Norrbotten,Pajala,Pajala,NA,"Kengis bruk, Sahlberg",Sweden,tame
+Rt026,Norrbotten,Pajala,Pajala,NA,"Kengis bruk, Sahlberg",Sweden,tame
+Rt028,Norrbotten,Pajala,Pajala,NA,"Kengis bruk, Sahlberg",Sweden,tame
 Rt050,Vastra Gotaland,Bohuslän,Sotenas,NA,zoo (Götaland),Sweden,tame
-Rt012,Anjou Islands,Faddeevskiy,Anjou Islands,NA,NA,Russia,unknown
-Rt021,NA,NA,NA,NA,NA,unknown,unknown
-Rt041,NA,NA,NA,NA,Läufillel (?),unknown,unknown
-Rt049,Kamtschatka,NA,Kamtschatka,NA,NA,Russia,unknown
-Rt058,Greenland_NE,NA,Greenland_NE,NA,Groenland,Greenland,unknown
+Rt012,Anjou Islands,Faddeevskiy,Anjou Islands,NA,NA,Russia,NA
+Rt021,NA,NA,NA,NA,NA,NA,NA
+Rt041,NA,NA,NA,NA,Läufillel (?),NA,NA
+Rt049,Kamtschatka,NA,Kamtschatka,NA,NA,Russia,NA
+Rt058,Greenland_NE,NA,Greenland_NE,NA,Groenland,Greenland,NA
 Rt030,Sagvar,NA,Sagvar,NA,NA,Hungary,NA
 Rt032,Trou Al Wesse,NA,Trou Al Wesse,NA,NA,Belgium,NA
 Rt033,Trou Al Wesse,NA,Trou Al Wesse,NA,NA,Belgium,NA
@@ -49,4 +49,9 @@ Rt061,Norrbotten,NA,Gallivare,NA,NA,Sweden,NA
 Rt065,Trou Al Wesse,NA,Trou Al Wesse,NA,NA,Belgium,NA
 Rt068,Trou Al Wesse,NA,Trou Al Wesse,NA,NA,Belgium,NA
 Rt039,NA,NA,NA,NA,NA,NA,NA
-Rt040,Tatarstan,NA,Pestrechinsky,NA,NA,NA,NA
+Rt040,Tatarstan,NA,Pestrechinsky,NA,NA,Russia,NA
+Rt11,NA,NA,NA,NA,SW Norway,Norway,mountain
+Rt13,NA,NA,NA,NA,NA,Greenland,NA
+Rt1,Svalbard,Spitsbergen,Spitsbergen,NA,Spitzbergen,Norway*,arctic
+Rt5,NA,NA,NA,NA,NA,NA,forest
+Rt7,Svalbard,Spitsbergen,Spitsbergen,NA,Spitzbergen,Norway*,arctic

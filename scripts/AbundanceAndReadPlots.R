@@ -2,7 +2,7 @@ phydata <- readRDS("./data/phyloseq-otu-base.rds")
 readphydata <- readRDS("./data/phyloseq-read-base.rds")
 sampledata <- sample_data(phydata)
 read_sampledata <- sample_data(readphydata)
-
+location <- read.csv("~/MEME/Uppsala_Katja_Project/Metagenomics/data/reindeer_location_summaries.csv", row.names=1)
 # reset the column labels of the taxa tables
 
 #ABUNDANCE Fitlering
@@ -211,11 +211,24 @@ plot_taxa_heatmap(phyrt, subset.top = 20, transformation = "clr",
                   VariableA = "Sample.R_cat")
 dev.off()
 
-pdf(file = "./images/TOPTAXAinsamples_2202_location.pdf", height = 5, width = 12)
-plot_taxa_heatmap(phyrt, subset.top = 20, transformation = "clr",
+
+locationrt <- phyloseq(otu_table(phyrt), tax_table(phyrt), sample_data(location))
+
+pdf(file = "./images/TOPTAXAinsamples_2302_ecotype.pdf", height = 5, width = 12)
+plot_taxa_heatmap(locationrt, subset.top = 20, transformation = "clr",
                   taxonomic.level = "Genus", border_color = "grey60",
-                  VariableA = "Spec.nation")
+                  VariableA = "Reindeer.ecotype.metadata")
 dev.off()
+
+
+pdf(file = "./images/TOPTAXAinsamples_2302_location.pdf", height = 5, width = 12)
+plot_taxa_heatmap(locationrt, subset.top = 20, transformation = "clr",
+                  taxonomic.level = "Genus", border_color = "grey60",
+                  VariableA = "Spec.nation.metadata")
+dev.off()
+
+location$
+
 
 
 df <- data.frame(colMeans(otu_table(phyrt)))
