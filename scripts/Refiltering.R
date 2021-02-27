@@ -1,11 +1,25 @@
 #script for re-filtering/swab sorting
 
+library(dplyr)
+library(phyloseq)
+library(tidyr)
+library(ggplot2)
+library(microbiomeutilities)
+library(decontam)
+source("scripts/ancom_v2.1.R")
+library(vegan)
+library(devtools)
+library(nlme)
+library(tidyverse)
+library(compositions)
+library(pairwiseAdonis)
+
 phydata <- readRDS("./data/phyloseq-otu-base.rds")
 readphydata <- readRDS("./data/phyloseq-read-base.rds")
 sampledata <- sample_data(phydata)
-read_sampledata <- sample_data(readphydata)
 location <- read.csv("data/reindeer_location_summaries.csv", row.names=1)
 
+phydata <- prune_samples(c("BE113", "BL109"), phydata)
 #### contaminant filtering workflow
 # 1. Abundance (base) filtering
 # 2. Swab prevalence (taxa found just in swabs not in blanks)
@@ -37,7 +51,7 @@ phydata.filt <- phyloseq(otu_table(phy.filt, taxa_are_rows = FALSE), sampledata,
 
 #how many filtered out and how many still in blanks
 filteredout <- which(!taxa_names(phydata) %in% taxa_names(phydata.filt))
-length(filteredout)
+length(filteredout) #326
 
 # pruning, keeping only blanks
 phyabundance.blanks <- prune_samples(grepl(c("BE|BL|Bk"),sample_names(phydata.filt)),phydata.filt)
@@ -47,18 +61,18 @@ abundanceblanks <- data.frame(otu_table(phyabundance.blanks)) %>%
   select(which(colSums(.) > 0))
 
 # create a phyloseq of the taxa found in blanks
-phyabundanceblanks <- prune_taxa(colnames(abundanceblanks), phyabundance.blanks) #282 taxa
+phyabundanceblanks <- prune_taxa(colnames(abundanceblanks), phyabundance.blanks) #286 taxa
 
 ## filter out taxa that are just in swabs and samples (i.e. not in blanks)
 phy.swabs <- prune_samples(grepl("^BS",sample_names(phydata.filt)), phydata.filt)
 otu.swabs <- data.frame(otu_table(phy.swabs)) %>%
   select(which(colSums(.) > 0))  # remove empty taxa
-physwabs <- prune_taxa(colnames(otu.swabs), phy.swabs) #348 taxa
+physwabs <- prune_taxa(colnames(otu.swabs), phy.swabs) #242 taxa
 
 ## how many overlap between swabs and blanks?
 # take the swab taxa that  are not found in blanks
 swab.excl<- !taxa_names(phy.swabs) %in% taxa_names(phyabundanceblanks)
-phy.onlyswabs <- prune_taxa(swab.excl, phy.swabs) #282 taxa
+phy.onlyswabs <- prune_taxa(swab.excl, phy.swabs) #62 taxa
 
 # only keep the taxa that aren't found in swabs
 # also remove swabs from phyloseq 
@@ -66,7 +80,7 @@ phy.woswab.excl <- !taxa_names(phydata.filt) %in% taxa_names(phy.onlyswabs)
 phywoswabs <- prune_taxa(phy.woswab.excl, prune_samples(!grepl("^BS",sample_names(phydata.filt)),phydata.filt))
 
 # how many taxa removed?
-print(ntaxa(phydata.filt) - ntaxa(phywoswabs))
+print(ntaxa(phydata.filt) - ntaxa(phywoswabs)) #62
 
 # what type of taxa are removed? (maybe more important question to ask for blanks)
 
@@ -83,12 +97,12 @@ controls<-phywoswabs@sam_data$Sample.R_cat %in% c("ExtBlank","LibBlank")
 both.contaminants <- isContaminant(phywoswabs, method="either",neg = controls,conc = "Seq.copies.in.pool",threshold = c(0.1,0.5),normalize = T)
 
 # how many contaminants were filtered out?
-table(both.contaminants$contaminant) #none rip
+table(both.contaminants$contaminant) #4
 
 # keep just the non-contaminant taxa
 phywocont <- prune_taxa(both.contaminants$contaminant==FALSE,phywoswabs)
 # keep just the contaminant taxa
-##EMPTY phyWcont <- prune_taxa(both.contaminants$contaminant==TRUE,phywoswabs)
+phyWcont <- prune_taxa(both.contaminants$contaminant==TRUE,phywoswabs)
 
 ## Just keep reindeer
 rt.samples <- sample_names(phywocont)[which(grepl("^Rt",sample_names(phywocont)))]
@@ -110,10 +124,33 @@ phywocont.blanks <- prune_samples(blanksamples,phywocont) #282 txa
 #phyblanks <- prune_taxa(blank, phywocont.blanks) #still 282 taxa here, none are empty!!
 
 ##just swabs
-swabsamples <- sample_names(phywocont)[which(grepl("^BS",sample_names(phywocont)))]
-phywocont.swabs <- prune_samples(swabsamples, phywocont)
-otu.swabs <- data.frame(otu_table(phywocont.swabs)) %>%
-  select(which(colSums(.) > 0))  # remove empty taxa
-swab <- colnames(otu.swabs)
-physwabs <- prune_taxa(swab, phywocont.swabs) #54 are empty i.e. found in samples and not swabs, 228 total
+#swabsamples <- sample_names(phywocont)[which(grepl("^BS",sample_names(phywocont)))]
+#phywocont.swabs <- prune_samples(swabsamples, phywocont)
+#otu.swabs <- data.frame(otu_table(phywocont.swabs)) %>%
+#  select(which(colSums(.) > 0))  # remove empty taxa
+#swab <- colnames(otu.swabs)
+#physwabs <- prune_taxa(swab, phywocont.swabs) #54 are empty i.e. found in samples and not swabs, 228 total
 
+y <- !taxa_names(phyrt) %in% taxa_names(physwabs) #52 taxa leftover
+phyrtwoswabs <- prune_taxa(y, phyrt)
+taxa_names(phyrtwoswabs)
+pdf(file = "./images/TOPTAXAnoswabtaxa2702.pdf", height = 5, width = 12)
+plot_taxa_heatmap(phyrtwoswabs, subset.top = 52, transformation = "clr",
+                  taxonomic.level = "Genus", border_color = "grey60",
+                  VariableA = "Sample.R_cat")
+dev.off()
+tax <- data.frame(tax_table(phyrtwoswabs))
+generainrt <- unique(tax$Genus)
+
+
+##ordination to see if any patterns present
+rt <- prune_samples(names(which(sample_sums(phyrtwoswabs)>0)), phyrtwoswabs) #3 that are empty - check this out
+
+sample_data(rt) <- sample_data(location)
+transformedrt <- microbiome::transform(rt, "compositional")
+
+data.ord <- phyloseq::ordinate(transformedrt, method = "NMDS", distance = "bray") #incomplete dataset
+p1 = plot_ordination(transformedrt, data.ord, color = "Spec.nation.metadata")+
+  stat_ellipse()
+
+p1
